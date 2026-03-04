@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 
@@ -130,9 +131,31 @@
             border-right: 1px solid rgba(0, 0, 0, .08);
             display: flex;
             flex-direction: column;
-            padding: 100px 50px 60px;
+            padding: 40px 50px 60px;
+            /* Reduced top padding to make room for logo */
             position: relative;
             z-index: 10;
+        }
+
+        .left-logo {
+            margin-bottom: 60px;
+            display: inline-block;
+        }
+
+        .left-logo a {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 28px;
+            /* Increased font size */
+            font-weight: 900;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+            /* Tighter letter spacing to match screenshot */
+            transition: opacity 0.2s;
+        }
+
+        .left-logo a:hover {
+            opacity: 0.8;
         }
 
         .left-contact-heading {
@@ -1406,6 +1429,9 @@
         <!-- FIXED LEFT: Step Overview -->
         <aside class="step-overview" id="stepOverview">
             <div>
+                <div class="left-logo">
+                    <a href="https://sketchohoh.imweb.me/">SKETCH OO.</a>
+                </div>
                 <div class="left-contact-heading">CONTACT US</div>
                 <div class="left-contact-sub">프로젝트를 설명하고 연락처를 남겨주세요.<br>3일 이내에 연락드리겠습니다.</div>
             </div>
@@ -1842,9 +1868,28 @@
     <div class="overlay-screen" id="successScreen">
         <p class="overlay-title">감사합니다<span>.</span></p>
         <p class="overlay-sub">문의가 정상 접수되었습니다.<br>검토 후 빠르게 연락드리겠습니다.</p>
+
+        <!-- 🚀 추가된 카카오톡 유도 버튼 -->
+        <div
+            style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px; max-width: 400px; width: 90%; margin: 30px auto 20px; text-align: center;">
+            <p style="font-size: 14px; color: #fff; font-weight: 500; margin-bottom: 15px;">혹시 더 빠른 상담이 필요하신가요?</p>
+            <a href="https://pf.kakao.com/_PJyIX" target="_blank"
+                style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #FEE500; color: #000000; font-weight: 800; text-decoration: none; padding: 14px 24px; border-radius: 8px; font-size: 15px; transition: transform 0.2s;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 3c-5.5 0-10 3.5-10 8 0 2.8 1.8 5.4 4.8 6.8-.2.7-1 3.2-1 3.5 0 .3.2.4.4.2.2-.1 3.5-2.4 4-2.8.6.1 1.2.1 1.8.1 5.5 0 10-3.5 10-8s-4.5-8-10-8z" />
+                </svg>
+                카카오톡 1:1 빠른 상담
+            </a>
+        </div>
+
         <div class="overlay-btns">
-            <button class="btn-white" onclick="location.reload()">새 문의 작성</button>
-            <a href="#" class="btn-ghost">포트폴리오 보기</a>
+            <a href="https://sketchohoh.imweb.me/" class="btn-white"
+                style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">메인 홈으로
+                가기</a>
+            <a href="https://sketchohoh.imweb.me/#so-faq-section" class="btn-ghost"
+                style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">자주 묻는 질문
+                보기</a>
         </div>
     </div>
 
@@ -1905,9 +1950,28 @@
                 const n = document.getElementById('inp-name').value.trim();
                 const p = document.getElementById('inp-phone').value.trim();
                 const e = document.getElementById('inp-email').value.trim();
-                if (!n) { document.getElementById('inp-name').focus(); shake(document.getElementById('inp-name')); return; }
-                if (!p) { document.getElementById('inp-phone').focus(); shake(document.getElementById('inp-phone')); return; }
-                if (!e) { document.getElementById('inp-email').focus(); shake(document.getElementById('inp-email')); return; }
+
+                if (!n) {
+                    document.getElementById('inp-name').focus();
+                    shake(document.getElementById('inp-name'));
+                    return;
+                }
+
+                const phoneRegex = /^01[016789]-?\d{3,4}-?\d{4}$/;
+                if (!p || !phoneRegex.test(p)) {
+                    alert('올바른 연락처 형식을 입력해주세요. (예: 010-0000-0000)');
+                    document.getElementById('inp-phone').focus();
+                    shake(document.getElementById('inp-phone'));
+                    return;
+                }
+
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!e || !emailRegex.test(e)) {
+                    alert('올바른 이메일 형식을 입력해주세요.');
+                    document.getElementById('inp-email').focus();
+                    shake(document.getElementById('inp-email'));
+                    return;
+                }
             }
             if (currentStep === 4) {
                 const m = document.getElementById('inp-message').value.trim();
@@ -2223,6 +2287,22 @@
         initCardHeaders();
         initNav();
         updateNav();
+
+        // ── AUTO-FORMAT PHONE NUMBER ──
+        document.getElementById('inp-phone').addEventListener('input', function (e) {
+            let val = e.target.value.replace(/[^0-9]/g, '');
+            let res = '';
+            if (val.length < 4) {
+                res = val;
+            } else if (val.length < 7) {
+                res = val.substr(0, 3) + '-' + val.substr(3);
+            } else if (val.length === 10) {
+                res = val.substr(0, 3) + '-' + val.substr(3, 3) + '-' + val.substr(6);
+            } else {
+                res = val.substr(0, 3) + '-' + val.substr(3, 4) + '-' + val.substr(7, 4);
+            }
+            e.target.value = res;
+        });
     </script>
 </body>
 
