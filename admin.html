@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드 - 문의 관리</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body class="text-gray-800 antialiased p-6 md:p-12">
+
+    <!-- 🔒 관리자 로그인 오버레이 -->
+    <div id="adminLoginOverlay" class="fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
+            <div
+                class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">관리자 인증</h2>
+            <p class="text-gray-500 mb-8 text-sm">대시보드 접속을 위해 비밀번호를 입력하세요.</p>
+            <input type="password" id="adminPasswordInput" placeholder="비밀번호 입력"
+                class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-center text-lg focus:border-indigo-500 focus:outline-none mb-4 transition-colors">
+            <button onclick="checkAdminLogin()"
+                class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-700 transition-all">로그인</button>
+            <p id="adminLoginError" class="text-red-500 text-xs mt-4 font-medium hidden">비밀번호가 일치하지 않습니다.</p>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">문의 관리 대시보드</h1>
+                <p class="text-gray-500 mt-2">웹사이트에서 접수된 모든 문의 내역을 실시간으로 확인하고 검색합니다.</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <input type="date" id="searchStartDate"
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <span class="text-gray-500">~</span>
+                    <input type="date" id="searchEndDate"
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                </div>
+                <div class="relative w-full sm:w-auto">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="고객명, 연락처 검색"
+                        class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                </div>
+                <button onclick="loadInquiries()"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    검색
+                </button>
+            </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col"
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                접수일</th>
+                            <th scope="col"
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                고객정보 (이름/연락처)</th>
+                            <th scope="col"
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                프로젝트 유형</th>
+                            <th scope="col"
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                예산 및 일정</th>
+                            <th scope="col"
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                진행 상태</th>
+                            <th scope="col"
+                                class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inquiryList" class="bg-white divide-y divide-gray-200">
+                        <!-- Data will be populated here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for details (Hidden by default) -->
+    <div id="detailModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center p-4 z-50 transition-opacity">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col hidden" id="modalContent">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">문의 상세 정보</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-500">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto" id="modalBody">
+                <!-- Content injected via JS -->
+            </div>
+            <div class="p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl flex justify-end gap-3" id="modalFooter">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Settings & Preview Modal (Hidden by default) -->
+    <div id="previewModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center p-4 z-[60] transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[95vh] flex flex-col hidden"
+            id="previewModalContent">
+            <div class="p-5 border-b border-gray-200 flex justify-between items-center bg-indigo-50 rounded-t-xl">
+                <h3 class="text-xl font-bold text-indigo-900 flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
+                    견적서 및 계약서 사전 세팅 (미리보기)
+                </h3>
+                <button onclick="closePreviewModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-hidden flex flex-col md:flex-row">
+                <!-- Left: Input Area -->
+                <div
+                    class="w-full md:w-5/12 p-6 overflow-y-auto border-r border-gray-200 bg-gray-50 flex flex-col gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-2">견적 상세 항목 입력</label>
+                        <p class="text-xs text-gray-500 mb-3">항목명과 가격(원)을 쉼표(,)로 구분하여 한 줄씩 입력하세요.</p>
+                        <textarea id="previewInvoiceItems" rows="6"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+                            placeholder="기획 및 화면 설계, 1500000&#10;반응형 퍼블리싱, 800000"
+                            oninput="updateLivePreview()"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-2">계약서 특약 조항 입력</label>
+                        <p class="text-xs text-gray-500 mb-3">기본 조항(1~3조) 외에 추가할 특약(제 4 조)을 줄바꿈으로 입력하세요.</p>
+                        <textarea id="previewContractTerms" rows="6"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+                            placeholder="1. 추가 수정은 2회 완료 후 유상 처리됩니다.&#10;2. 잔금 입금 후 원본 소스가 제공됩니다."></textarea>
+                    </div>
+                </div>
+
+                <!-- Right: Live Preview Area -->
+                <div class="w-full md:w-7/12 p-6 overflow-y-auto bg-gray-100 flex flex-col items-center">
+                    <h4
+                        class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 w-full max-w-lg text-left">
+                        Live Preview: Invoice</h4>
+
+                    <!-- Preview Card -->
+                    <div
+                        class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 max-w-lg w-full pointer-events-none">
+                        <div class="border-b border-gray-200 pb-4 mb-4 flex justify-between items-end">
+                            <h2 class="text-2xl font-black tracking-tight text-gray-900 mb-0">견적서 <span
+                                    class="text-xs text-gray-400 font-normal ml-1 tracking-widest uppercase">ESTIMATE</span>
+                            </h2>
+                            <div class="text-[10px] text-gray-500 text-right">
+                                <strong>Date:</strong> 202X.XX.XX<br>
+                                <strong>No:</strong> EST-XXXXXXXX
+                            </div>
+                        </div>
+
+                        <!-- Table -->
+                        <table class="w-full text-left border-collapse mb-6">
+                            <thead>
+                                <tr>
+                                    <th
+                                        class="py-2 px-3 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase rounded-tl-md">
+                                        Project Type</th>
+                                    <th
+                                        class="py-2 px-3 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase text-center">
+                                        Qty</th>
+                                    <th
+                                        class="py-2 px-3 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase text-right rounded-tr-md">
+                                        Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTableBody">
+                                <!-- Generated by JS -->
+                            </tbody>
+                        </table>
+
+                        <!-- Totals -->
+                        <div class="bg-gray-50 rounded-lg border border-gray-100 p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[11px] text-gray-500">공급가액</span>
+                                <span class="text-sm font-semibold text-gray-800" id="previewSupply">-</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-3 pb-3 border-b border-gray-200">
+                                <span class="text-[11px] text-gray-500">부가세 (VAT)</span>
+                                <span class="text-sm font-semibold text-gray-800" id="previewVat">-</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[11px] font-bold text-gray-800">총 결제예정금액</span>
+                                <span class="text-base font-bold text-indigo-600 tracking-tight"
+                                    id="previewTotal">-</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                                <span class="text-[10px] text-gray-500">계약 착수금 (50%)</span>
+                                <span class="text-sm font-bold text-gray-800 tracking-tight"
+                                    id="previewDeposit">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-5 border-t border-gray-200 bg-white rounded-b-xl flex justify-end gap-3">
+                <button onclick="closePreviewModal()"
+                    class="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 font-medium transition-colors text-sm">취소</button>
+                <button onclick="applyPreviewSettings()"
+                    class="px-7 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold transition-colors shadow-sm text-sm">
+                    확인 및 적용하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // 1. Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJeGRV5CnRoRwqoQ1igrjhHCJHCMow3L4",
+            authDomain: "sketchoo-2c343.firebaseapp.com",
+            projectId: "sketchoo-2c343",
+            storageBucket: "sketchoo-2c343.firebasestorage.app",
+            messagingSenderId: "1072809023897",
+            appId: "1:1072809023897:web:edc12722ad0d03b4a45b08"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 🛡️ 관리자 로그인 체크 로직
+        const ADMIN_PASS = "admin1234"; // 초기 비밀번호
+
+        function checkAdminLogin() {
+            const input = document.getElementById('adminPasswordInput').value;
+            if (input === ADMIN_PASS) {
+                sessionStorage.setItem('admin_auth', 'true');
+                document.getElementById('adminLoginOverlay').classList.add('hidden');
+                loadInquiries();
+            } else {
+                document.getElementById('adminLoginError').classList.remove('hidden');
+            }
+        }
+
+        // 엔터키 로그인 지원
+        document.getElementById('adminPasswordInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAdminLogin();
+        });
+
+        // 세션 체크 (페이지 로드 시)
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('admin_auth') === 'true') {
+                document.getElementById('adminLoginOverlay').classList.add('hidden');
+                loadInquiries();
+            }
+        });
+
+        // 2. Load Data from Firestore
+        let inquiriesData = {};
+
+        function loadInquiries() {
+            const list = document.getElementById('inquiryList');
+            const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
+            const startDateInput = document.getElementById('searchStartDate').value;
+            const endDateInput = document.getElementById('searchEndDate').value;
+
+            list.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-gray-500"><div class="animate-pulse">데이터를 불러오는 중입니다...</div></td></tr>`;
+
+            db.collection("contacts").orderBy("createdAt", "desc").get().then((querySnapshot) => {
+                list.innerHTML = '';
+                inquiriesData = {}; // 저장 데이터 초기화
+
+                if (querySnapshot.empty) {
+                    list.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-gray-500">아직 접수된 문의가 없습니다.</td></tr>`;
+                    return;
+                }
+
+                let displayCount = 0;
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const id = doc.id;
+
+                    // 날짜 변환 및 필터링용 날짜 객체
+                    let dateStr = '-';
+                    let itemDate = null;
+                    if (data.createdAt) {
+                        itemDate = data.createdAt.toDate();
+                        dateStr = `${itemDate.getFullYear()}.${String(itemDate.getMonth() + 1).padStart(2, '0')}.${String(itemDate.getDate()).padStart(2, '0')} ${String(itemDate.getHours()).padStart(2, '0')}:${String(itemDate.getMinutes()).padStart(2, '0')}`;
+                    }
+
+                    // --- 🔍 필터링 로직 시작 ---
+                    let isMatch = true;
+
+                    // 1. 날짜 범위 필터
+                    if (itemDate && (startDateInput || endDateInput)) {
+                        // 시간 무시하고 날짜만 비교하기 위해 세팅
+                        const itemDay = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate()).getTime();
+
+                        if (startDateInput) {
+                            const start = new Date(startDateInput);
+                            const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+                            if (itemDay < startDay) isMatch = false;
+                        }
+                        if (endDateInput) {
+                            const end = new Date(endDateInput);
+                            const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+                            if (itemDay > endDay) isMatch = false;
+                        }
+                    }
+
+                    // 2. 텍스트 검색 필터 (이름 또는 연락처)
+                    if (searchInput) {
+                        const nameMatch = data.name && data.name.toLowerCase().includes(searchInput);
+                        const phoneMatch = data.phone && data.phone.toLowerCase().includes(searchInput);
+                        if (!nameMatch && !phoneMatch) {
+                            isMatch = false;
+                        }
+                    }
+
+                    if (!isMatch) return; // 필터 조건에 안 맞으면 넘어가기
+                    // --- 🔍 필터링 로직 끝 ---
+
+                    displayCount++;
+                    inquiriesData[id] = data; // 모달창을 위해 데이터 임시 저장
+
+                    const goals = Array.isArray(data.goals) ? data.goals.join(', ') : '-';
+                    const status = data.status || '신규 접수'; // 상태값이 없으면 기본 '신규 접수'
+
+                    let statusColor = "bg-yellow-100 text-yellow-800";
+                    if (status === '견적 발송') statusColor = "bg-blue-100 text-blue-800";
+                    if (status === '계약 완료') statusColor = "bg-purple-100 text-purple-800";
+                    if (status === '진행 중') statusColor = "bg-green-100 text-green-800";
+                    if (status === '제작 완료') statusColor = "bg-indigo-100 text-indigo-800";
+                    if (status === '인수인계') statusColor = "bg-gray-100 text-gray-800";
+
+                    // 테이블 행 생성
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${dateStr}</td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-bold text-gray-900">${data.name || '-'}</div>
+                            <div class="text-sm text-gray-500">${data.phone || '-'}</div>
+                            <div class="text-sm text-gray-400">${data.email || '-'}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-gray-900">${data.projectType || '-'}</div>
+                            <div class="text-xs text-gray-500 mt-1 truncate max-w-xs" title="${goals}">${goals}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-indigo-600">${data.budget || '-'}</div>
+                            <div class="text-xs text-gray-500 mt-1">${data.timeline || '-'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${statusColor}">
+                                ${status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="openModal('${id}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors font-semibold shadow-sm border border-indigo-100">상세 보기</button>
+                        </td>
+                    `;
+                    list.appendChild(tr);
+                });
+
+                if (displayCount === 0) {
+                    list.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-gray-500 font-medium">검색 결과가 없습니다. 조건을 확인해주세요.</td></tr>`;
+                }
+            }).catch((error) => {
+                console.error("Error getting documents: ", error);
+                list.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-red-500 font-medium">데이터를 불러오는데 실패했습니다. 인터넷 연결을 확인해주세요.</td></tr>`;
+            });
+        }
+
+        // 3. Modal Logic
+        function openModal(id) {
+            const data = inquiriesData[id];
+            if (!data) return;
+
+            let dateStr = '-';
+            if (data.createdAt) {
+                const dateObj = data.createdAt.toDate();
+                dateStr = dateObj.toLocaleString('ko-KR');
+            }
+
+            const body = document.getElementById('modalBody');
+            body.innerHTML = `
+                <div class="grid grid-cols-2 gap-y-5 gap-x-6 mb-6">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">고객명</p>
+                        <p class="font-semibold text-gray-900 text-lg">${data.name || '-'}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">접수 일시</p>
+                        <p class="font-medium text-gray-900">${dateStr}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">연락처</p>
+                        <p class="font-medium text-gray-900">${data.phone || '-'}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">이메일</p>
+                        <p class="font-medium text-blue-600 underline">${data.email || '-'}</p>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 py-5">
+                    <h4 class="font-bold text-gray-900 mb-4 text-lg">프로젝트 기본 정보</h4>
+                    <div class="grid grid-cols-2 gap-y-5 gap-x-6">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">프로젝트 유형</p>
+                            <p class="font-medium text-gray-900">${data.projectType || '-'}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">홈페이지 보유 여부</p>
+                            <p class="font-medium text-gray-900">${data.assetStatus || '-'}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">예산 범위</p>
+                            <p class="font-bold text-indigo-600 text-lg">${data.budget || '-'}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">희망 일정</p>
+                            <p class="font-medium text-gray-900">${data.timeline || '-'}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 py-5">
+                    <p class="text-sm text-gray-500 mb-3">선택한 주요 목표</p>
+                    <div class="flex flex-wrap gap-2">
+                        ${Array.isArray(data.goals) ? data.goals.map(g => `<span class="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1.5 rounded-md border border-gray-200">${g}</span>`).join('') : '-'}
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 py-5">
+                    <p class="text-sm text-gray-500 mb-2">참고 URL</p>
+                    <p class="text-sm text-blue-600 whitespace-pre-wrap font-mono bg-blue-50 p-3 rounded-lg border border-blue-100 break-all">${data.referenceUrls || '없음'}</p>
+                </div>
+
+                <div class="border-t border-gray-200 pt-5">
+                    <p class="text-sm text-gray-500 mb-2">프리폼 상세 내용</p>
+                    <div class="bg-gray-50 p-5 rounded-lg border border-gray-200 text-sm whitespace-pre-wrap leading-relaxed text-gray-800 shadow-inner min-h-[100px]">${data.details || '내용 없음'}</div>
+                </div>
+
+                <!-- 🚀 신규 추가: 상태, 견적, 코드 관리 영역 -->
+                <div class="border-t border-gray-200 py-6 mt-6 bg-indigo-50 -mx-6 px-6 -mb-6 rounded-b-lg">
+                    <h4 class="font-bold text-indigo-900 mb-4 text-lg flex items-center gap-2">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        고객 대시보드 관리
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <!-- 진행 상태 -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">현재 진행 상태</label>
+                            <select id="editStatus" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                <option value="신규 접수" ${data.status === '신규 접수' || !data.status ? 'selected' : ''}>신규 접수</option>
+                                <option value="견적 발송" ${data.status === '견적 발송' ? 'selected' : ''}>견적 발송 (결제 대기)</option>
+                                <option value="계약 완료" ${data.status === '계약 완료' ? 'selected' : ''}>계약/결제 완료</option>
+                                <option value="진행 중" ${data.status === '진행 중' ? 'selected' : ''}>프로젝트 진행 중 (디자인/개발)</option>
+                                <option value="제작 완료" ${data.status === '제작 완료' ? 'selected' : ''}>제작 완료 (검수 중)</option>
+                                <option value="인수인계" ${data.status === '인수인계' ? 'selected' : ''}>인수인계 완료 (종료)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 견적 금액 -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">최종 견적 금액</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">₩</span>
+                                <input type="text" id="editQuote" value="${data.quoteAmount || ''}" placeholder="예: 1,500,000" class="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                            </div>
+                        </div>
+
+                        <!-- 일정 시작일 (타임라인 기준일) -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-sm font-semibold text-gray-700">작업 시작일 (타임라인 기준일)</label>
+                                <button onclick="setTodayDate()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">오늘로 지정</button>
+                            </div>
+                            <input type="date" id="editStartDate" value="${data.scheduleStartDate ? (typeof data.scheduleStartDate === 'string' ? data.scheduleStartDate : (data.scheduleStartDate.toDate ? data.scheduleStartDate.toDate().toISOString().split('T')[0] : '')) : ''}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700">
+                        </div>
+
+                        <!-- 접속 코드 -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-sm font-semibold text-gray-700">고객 접속 코드 (고유값)</label>
+                                <div class="flex gap-3">
+                                    <button onclick="copyAccessCode()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        복사
+                                    </button>
+                                    <button onclick="generateRandomCode()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">자동 생성</button>
+                                </div>
+                            </div>
+                            <input type="text" id="editAccessCode" value="${data.accessCode || ''}" placeholder="예: XJ4K" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                        </div>
+                    </div>
+
+                    <!-- 🚀 프로젝트 시안 및 산출물 관리 (신규) -->
+                    <div class="mt-6 pt-6 border-t border-indigo-200">
+                        <h5 class="text-sm font-bold text-indigo-900 mb-4 flex items-center gap-2">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h14a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            시안 및 산출물 관리 (고객 노출용)
+                        </h5>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">타임라인 현재 단계 (Gantt)</label>
+                                <select id="editGanttStep" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                                    <option value="0" ${data.ganttStep === 0 ? 'selected' : ''}>1차 시안 (작업 시작)</option>
+                                    <option value="1" ${data.ganttStep === 1 ? 'selected' : ''}>컨펌 (1차)</option>
+                                    <option value="2" ${data.ganttStep === 2 ? 'selected' : ''}>2차 시안</option>
+                                    <option value="3" ${data.ganttStep === 3 ? 'selected' : ''}>컨펌 (최종)</option>
+                                    <option value="4" ${data.ganttStep === 4 ? 'selected' : ''}>소유권 이전 (완료)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">1차 시안 링크 (Figma/Drive 등)</label>
+                                <input type="text" id="editDraft1" value="${data.draft1Link || ''}" placeholder="https://..." class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">2차 시안 링크</label>
+                                <input type="text" id="editDraft2" value="${data.draft2Link || ''}" placeholder="https://..." class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">최종 파일/소유권 이전 링크</label>
+                                <input type="text" id="editFinalLink" value="${data.finalDraftLink || ''}" placeholder="https://..." class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🚀 문서 세부 내용 관리 (견적서/계약서) -->
+                    <div class="mt-6 pt-6 border-t border-indigo-200">
+                        <h5 class="text-sm font-bold text-indigo-900 mb-4 flex items-center gap-2">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            견적서 및 계약서 사전 세팅 (고객 노출용)
+                        </h5>
+                        
+                        <div class="space-y-4">
+                            <!-- Hidden inputs to store the text data that will be populated by the preview modal -->
+                            <input type="hidden" id="editInvoiceItems" value="${data.invoiceItems || ''}">
+                            <input type="hidden" id="editContractTerms" value="${data.contractTerms || ''}">
+
+                            <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-5 flex flex-col md:flex-row items-center justify-between">
+                                <div class="mb-4 md:mb-0">
+                                    <h6 class="text-sm font-bold text-indigo-900 mb-1">문서 세부 항목 및 특약 설정</h6>
+                                    <p class="text-xs text-indigo-700">고객이 볼 견적서의 상세 항목과 계약서 특약사항을 실제 화면처럼 보면서 수정할 수 있습니다.</p>
+                                </div>
+                                <button onclick="openPreviewModal()" class="shrink-0 flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold transition-colors shadow-sm text-sm w-full md:w-auto">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    세팅 및 미리보기 열기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-indigo-100 flex justify-between items-center">
+                        <div class="text-xs text-indigo-600 font-medium">
+                            💡 접속 코드가 있어야 고객이 대시보드에 로그인할 수 있습니다.
+                        </div>
+                        <button onclick="copyClientLink()" class="flex items-center gap-1 text-sm bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-3 py-1.5 rounded-lg font-semibold transition-colors shadow-sm">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            고객용 링크 복사하기
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // 모달 푸터 버튼 세팅
+            document.getElementById('modalFooter').innerHTML = `
+                <button onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 font-medium transition-colors">취소</button>
+                <button onclick="saveInquiry('${id}')" class="px-5 py-2 relative bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold transition-colors shadow-md">
+                    변경사항 저장하기
+                </button>
+            `;
+
+            document.getElementById('detailModal').classList.remove('hidden');
+            document.getElementById('modalContent').classList.remove('hidden');
+        }
+
+        // --- 모달 제어 ---
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+            document.getElementById('modalContent').classList.add('hidden');
+        }
+
+        // --- 🚀 문서 세부 미리보기 모달 스크립트 ---
+        function openPreviewModal() {
+            // hidden input에서 값을 가져와 모달 텍스트창에 세팅
+            document.getElementById('previewInvoiceItems').value = document.getElementById('editInvoiceItems').value;
+            document.getElementById('previewContractTerms').value = document.getElementById('editContractTerms').value;
+
+            updateLivePreview();
+
+            document.getElementById('previewModal').classList.remove('hidden');
+            document.getElementById('previewModalContent').classList.remove('hidden');
+        }
+
+        function closePreviewModal() {
+            document.getElementById('previewModal').classList.add('hidden');
+            document.getElementById('previewModalContent').classList.add('hidden');
+        }
+
+        function applyPreviewSettings() {
+            // 수정된 값을 다시 hidden input으로 저장
+            document.getElementById('editInvoiceItems').value = document.getElementById('previewInvoiceItems').value;
+            document.getElementById('editContractTerms').value = document.getElementById('previewContractTerms').value;
+
+            closePreviewModal();
+        }
+
+        function formatNumberPreview(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function updateLivePreview() {
+            const itemsText = document.getElementById('previewInvoiceItems').value;
+            const tbody = document.getElementById('previewTableBody');
+            tbody.innerHTML = '';
+
+            let totalSupply = 0;
+            const items = itemsText.split('\n');
+
+            let hasItems = false;
+            items.forEach(line => {
+                if (!line.trim()) return;
+                const parts = line.split(',');
+                const name = parts[0] ? parts[0].trim() : '이름 없음';
+                const priceStr = parts[1] ? parts[1].replace(/[^0-9]/g, '') : '0';
+                let price = parseInt(priceStr, 10);
+                if (isNaN(price)) price = 0;
+
+                totalSupply += price;
+                hasItems = true;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="py-2 px-3 border-b border-gray-100 text-xs font-semibold text-gray-800">${name}</td>
+                        <td class="py-2 px-3 border-b border-gray-100 text-xs text-center text-gray-500">1</td>
+                        <td class="py-2 px-3 border-b border-gray-100 text-xs text-right font-semibold text-gray-800">₩ ${formatNumberPreview(price)}</td>
+                    </tr>
+                `;
+            });
+
+            if (!hasItems) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td class="py-4 px-3 text-xs text-center text-gray-400" colspan="3">입력된 항목이 없습니다. 좌측에 항목을 입력해 보세요.</td>
+                    </tr>
+                `;
+            }
+
+            if (totalSupply > 0) {
+                const vat = Math.round(totalSupply * 0.1);
+                const total = totalSupply + vat;
+                const deposit = Math.round(total * 0.5);
+
+                document.getElementById('previewSupply').innerText = '₩ ' + formatNumberPreview(totalSupply);
+                document.getElementById('previewVat').innerText = '₩ ' + formatNumberPreview(vat);
+                document.getElementById('previewTotal').innerText = '₩ ' + formatNumberPreview(total);
+                document.getElementById('previewDeposit').innerText = '₩ ' + formatNumberPreview(deposit);
+            } else {
+                document.getElementById('previewSupply').innerText = '-';
+                document.getElementById('previewVat').innerText = '-';
+                document.getElementById('previewTotal').innerText = '-';
+                document.getElementById('previewDeposit').innerText = '-';
+            }
+        }
+        // --- 미리보기 모달 스크립트 끝 ---
+
+        // --- 관리 기능 스크립트 ---
+
+        function generateRandomCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 4; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('editAccessCode').value = result;
+        }
+
+        function copyAccessCode() {
+            const codeInput = document.getElementById('editAccessCode');
+            const code = codeInput.value.trim();
+            if (!code) {
+                alert('복사할 코드가 없습니다. 먼저 코드를 입력하거나 생성해주세요.');
+                return;
+            }
+            navigator.clipboard.writeText(code).then(() => {
+                // 시각적 피드백 효과
+                const originalBg = codeInput.style.backgroundColor;
+                codeInput.style.backgroundColor = '#e0e7ff'; // indigo-100 느낌
+                setTimeout(() => {
+                    codeInput.style.backgroundColor = originalBg;
+                }, 300);
+            }).catch(err => {
+                alert('코드 복사에 실패했습니다.');
+            });
+        }
+
+        function setTodayDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('editStartDate').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        function copyClientLink() {
+            const code = document.getElementById('editAccessCode').value.trim();
+            if (!code) {
+                alert('먼저 접속 코드를 발급/입력해주세요!');
+                return;
+            }
+
+            // --- 🚀 프로페셔널 도메인 적용 (sketchoo.kr) ---
+            const domain = "sketchoo.kr";
+            // 아임웹 메뉴 주소 체계에 맞춰 .html을 제거하고 /client 로 변경
+            const link = "https://" + domain + "/client?code=" + code;
+
+            navigator.clipboard.writeText(link).then(() => {
+                alert('고객 안내용 자동 로그인 링크가 복사되었습니다! 🎉\n\n' + link + '\n\n위 주소를 고객님께 전달하시면 로그인 과정 없이 바로 접속됩니다.');
+            });
+        }
+
+        function saveInquiry(id) {
+            const status = document.getElementById('editStatus').value;
+            const quote = document.getElementById('editQuote').value.trim();
+            const code = document.getElementById('editAccessCode').value.trim().toUpperCase();
+            const startDate = document.getElementById('editStartDate').value; // 'YYYY-MM-DD'
+            const ganttStep = parseInt(document.getElementById('editGanttStep').value, 10);
+            const draft1 = document.getElementById('editDraft1').value.trim();
+            const draft2 = document.getElementById('editDraft2').value.trim();
+            const finalLink = document.getElementById('editFinalLink').value.trim();
+            const invoiceItems = document.getElementById('editInvoiceItems').value.trim();
+            const contractTerms = document.getElementById('editContractTerms').value.trim();
+
+            // 저장 버튼 로딩 처리 (간단하게)
+            event.target.innerText = '저장 중...';
+            event.target.classList.add('opacity-75', 'cursor-not-allowed');
+
+            let updateData = {
+                status: status,
+                quoteAmount: quote,
+                accessCode: code,
+                ganttStep: ganttStep,
+                draft1Link: draft1,
+                draft2Link: draft2,
+                finalDraftLink: finalLink,
+                invoiceItems: invoiceItems,
+                contractTerms: contractTerms,
+                lastUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() // 수정 시간 기록
+            };
+
+            if (startDate) {
+                updateData.scheduleStartDate = startDate;
+            }
+
+            db.collection("contacts").doc(id).update(updateData).then(() => {
+                alert("✅ 성공적으로 저장되었습니다!");
+                closeModal();
+                loadInquiries(); // 바뀐 상태로 목록 리프레시
+            }).catch(error => {
+                console.error("Error updating document: ", error);
+                alert("저장 중 오류가 발생했습니다: " + error.message);
+                event.target.innerText = '변경사항 저장하기';
+                event.target.classList.remove('opacity-75', 'cursor-not-allowed');
+            });
+        }
+
+        // 모달창 바깥 클릭 시 닫기
+        document.getElementById('detailModal').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+
+        // ESC 키 누르면 모달 닫기
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // 최초 1회 실행
+        // loadInquiries(); // DomContentLoaded에서 세션 체크 후 실행하도록 이동함
+    </script>
+</body>
+
+</html>

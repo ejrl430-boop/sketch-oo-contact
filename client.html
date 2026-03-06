@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>고객 대시보드 - 프로젝트 현황</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Pretendard:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --accent: #b7f932;
+            --black: #0a0a0a;
+            --bg: #242424;
+            --white: #ffffff;
+            --gray: #888;
+            --border: rgba(255, 255, 255, 0.15);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-hover: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg);
+            color: var(--white);
+        }
+
+        .font-mont {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .logo {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 26px;
+            font-weight: 900;
+            color: var(--white);
+            letter-spacing: -1px;
+            text-transform: uppercase;
+        }
+
+        .custom-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .custom-card:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: var(--card-hover);
+        }
+
+        .custom-input {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid var(--border);
+            color: var(--white);
+            transition: border-color 0.2s;
+        }
+
+        .custom-input:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .custom-btn {
+            background: var(--accent);
+            color: var(--black);
+            transition: transform 0.2s;
+        }
+
+        .custom-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.8s ease-in-out;
+        }
+
+        .step-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            color: rgba(255, 255, 255, 0.4);
+            position: relative;
+            z-index: 10;
+        }
+
+        .step-dot.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 15px rgba(183, 249, 50, 0.2);
+            background: rgba(183, 249, 50, 0.05);
+        }
+
+        .step-dot.done {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--black);
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 17px;
+            top: 36px;
+            bottom: -20px;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .timeline-line.done {
+            background: var(--accent);
+        }
+
+        /* Sidebar Tabs */
+        .tab-btn {
+            color: rgba(255, 255, 255, 0.5);
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .tab-btn.active {
+            color: var(--black);
+            background: var(--white);
+        }
+
+        /* Scrollbar customization */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Mobile Bottom Nav */
+        @media (max-width: 767px) {
+            .mobile-bottom-nav {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: #1a1a1a;
+                border-top: 1px solid var(--border);
+                display: flex;
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 12px 10px 24px 10px;
+                z-index: 100;
+                box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+            }
+
+            .mobile-bottom-nav .tab-btn {
+                flex-direction: column;
+                gap: 4px;
+                padding: 8px;
+                font-size: 10px;
+                flex: 1;
+                opacity: 0.6;
+            }
+
+            .mobile-bottom-nav .tab-btn.active {
+                opacity: 1;
+                background: transparent;
+                color: var(--accent);
+            }
+
+            .mobile-bottom-nav .tab-btn.active svg {
+                color: var(--accent);
+            }
+
+            .main-content-mobile-padding {
+                padding-bottom: 100px;
+            }
+        }
+    </style>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body class="antialiased h-screen flex flex-col">
+
+    <!-- 1. 접근 제어 및 로딩 화면 (직접 로그인 제거하고 자동 인식용) -->
+    <div id="loginScreen"
+        class="flex-1 flex flex-col items-center justify-center p-6 w-full h-full absolute top-0 left-0 bg-[#242424] z-50">
+        <div class="text-center">
+            <div class="logo mb-8 bounce" style="font-size: 40px;">SKETCH OO.</div>
+            <div id="loadingStatus" class="flex flex-col items-center">
+                <div
+                    class="w-12 h-12 border-4 border-[rgba(255,255,255,0.1)] border-t-[#b7f932] rounded-full animate-spin mb-4">
+                </div>
+                <p class="text-white font-medium">프로젝트 데이터를 불러오는 중입니다...</p>
+            </div>
+            <div id="loginError" class="hidden flex flex-col items-center">
+                <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                        </path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-2">접근 권한이 없습니다</h2>
+                <p class="text-[rgba(255,255,255,0.5)] mb-8">유효하지 않은 링크이거나 접속 코드가 올바르지 않습니다.<br>관리자에게 다시 문의해주세요.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 대시보드 메인 화면 (사이드바 + 모바일 바 하이브리드) -->
+    <div id="dashboardScreen" class="hidden flex-1 w-full h-full flex-col md:flex-row bg-[#242424]">
+
+        <!-- Sidebar (Desktop only) -->
+        <aside class="hidden md:flex w-64 bg-[#1a1a1a] border-r border-[rgba(255,255,255,0.1)] flex-col shrink-0 z-40">
+            <div class="p-8 border-b border-[rgba(255,255,255,0.1)] flex items-center bg-[#1a1a1a]">
+                <div class="logo" style="font-size: 24px;">SKETCH OO.</div>
+            </div>
+            <nav class="flex-1 overflow-y-auto p-4 flex flex-col gap-2 custom-scrollbar">
+                <a href="#" onclick="switchTab('home')" id="tabNav-home"
+                    class="tab-btn active flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-lg transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                        </path>
+                    </svg>
+                    대시보드
+                </a>
+                <div class="pt-6 pb-2 px-4 text-[10px] font-bold text-[rgba(255,255,255,0.3)] tracking-wider uppercase">
+                    Documents</div>
+                <a href="#" id="tabNav-invoice"
+                    class="tab-btn flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-lg opacity-50 cursor-not-allowed pointer-events-none transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
+                    <span id="label-invoice">견적서 (대기)</span>
+                </a>
+                <a href="#" id="tabNav-contract"
+                    class="tab-btn flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-lg opacity-50 cursor-not-allowed pointer-events-none transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                        </path>
+                    </svg>
+                    <span id="label-contract">계약서 (대기)</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Mobile Bottom Nav -->
+        <nav class="md:hidden mobile-bottom-nav" id="mobileNav">
+            <a href="#" onclick="switchTab('home')" id="tabNavMobile-home"
+                class="tab-btn active flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                홈
+            </a>
+            <a href="#" id="tabNavMobile-invoice"
+                class="tab-btn flex items-center justify-center opacity-40 pointer-events-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                견적서
+            </a>
+            <a href="#" id="tabNavMobile-contract"
+                class="tab-btn flex items-center justify-center opacity-40 pointer-events-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                    </path>
+                </svg>
+                계약서
+            </a>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-hidden relative main-content-mobile-padding" id="mainArea">
+            <!-- Dashboard Tab -->
+            <div id="tabContent-home" class="tab-content w-full h-full overflow-y-auto custom-scrollbar">
+                <div class="p-5 md:p-10 max-w-6xl mx-auto w-full">
+
+                    <!-- 환영 메시지 -->
+                    <div class="mb-10 w-full mt-4">
+                        <h2 class="text-3xl md:text-5xl font-bold leading-tight tracking-tight">
+                            <span id="displayClientName" class="text-[#b7f932]">고객명</span>님,<br>
+                            프로젝트 현황입니다.
+                        </h2>
+                        <p class="text-[rgba(255,255,255,0.5)] mt-4 text-sm font-medium">마지막 업데이트: <span
+                                id="displayLastUpdated" class="text-white">-</span></p>
+                    </div>
+
+                    <!-- 상태 배너 -->
+                    <div
+                        class="custom-card p-5 md:p-6 mb-10 flex items-center justify-between border-l-4 border-l-[#b7f932]">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-12 h-12 rounded-full bg-[rgba(183,249,50,0.1)] flex items-center justify-center shrink-0">
+                                <svg class="w-6 h-6 text-[#b7f932]" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-base md:text-lg font-semibold text-white">현재 <span id="displayStatusText"
+                                        class="text-[#b7f932] font-bold underline decoration-2 underline-offset-4">진행
+                                        중</span>
+                                    단계입니다.</p>
+                                <p class="text-xs md:text-sm text-[rgba(255,255,255,0.5)] mt-1">자세한 진행률은 아래 그래프를 참고해주세요.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 주요 지표 Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                        <div class="custom-card p-6 flex flex-col justify-center text-left">
+                            <p
+                                class="text-[10px] md:text-xs text-[rgba(255,255,255,0.5)] font-bold tracking-wider uppercase mb-1">
+                                Project Type</p>
+                            <p id="displayProjectType" class="text-white font-bold text-base md:text-lg mt-1">-</p>
+                        </div>
+
+                        <div
+                            class="custom-card p-6 flex flex-col justify-center text-left border-[#b7f932] bg-[rgba(183,249,50,0.03)]">
+                            <p class="text-[10px] md:text-xs text-[#b7f932] font-bold tracking-wider uppercase mb-1">
+                                Total
+                                Budget</p>
+                            <p id="displayQuote" class="text-white font-bold text-lg md:text-xl mt-1 font-mont">-</p>
+                        </div>
+
+                        <div class="custom-card p-6 flex flex-col justify-center text-left">
+                            <p
+                                class="text-[10px] md:text-xs text-[rgba(255,255,255,0.5)] font-bold tracking-wider uppercase mb-1">
+                                Timeline</p>
+                            <p id="displayTimeline" class="text-white font-bold text-base md:text-lg mt-1">-</p>
+                        </div>
+
+                        <div id="dashboard-doc-card"
+                            class="custom-card p-6 flex flex-col justify-center text-left transition-colors group opacity-50">
+                            <p
+                                class="text-[10px] md:text-xs text-[rgba(255,255,255,0.5)] font-bold tracking-wider uppercase mb-1">
+                                Documents</p>
+                            <a href="#" id="dashboard-doc-link"
+                                class="text-[rgba(255,255,255,0.4)] font-bold text-sm md:text-base mt-1 flex items-center gap-1">
+                                준비 중
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 그래프: 프로젝트 현황 -->
+                    <div class="custom-card p-8 md:p-10 mb-10">
+                        <h3 class="font-bold text-white mb-8 text-xl tracking-tight">실시간 진행 현황</h3>
+
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24">
+                            <!-- 원형 그래프 -->
+                            <div class="relative w-56 h-56 shrink-0">
+                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                    <!-- Background Circle -->
+                                    <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.05)"
+                                        stroke-width="8">
+                                    </circle>
+                                    <!-- Progress Circle -->
+                                    <circle id="progressCircle" cx="50" cy="50" r="42" fill="none" stroke="#b7f932"
+                                        stroke-width="8" stroke-linecap="round" class="progress-ring__circle"
+                                        stroke-dasharray="263.89" stroke-dashoffset="263.89"></circle>
+                                </svg>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span id="progressPercent"
+                                        class="text-5xl font-mont font-black text-white tracking-tighter">0%</span>
+                                    <span
+                                        class="text-xs text-[#b7f932] font-bold mt-1 tracking-widest uppercase">Complete</span>
+                                </div>
+                            </div>
+
+                            <!-- 세부 단계 목록 -->
+                            <div class="w-full flex-1 max-w-sm">
+                                <div id="stepListContainer" class="relative pl-2">
+                                    <!-- JS 영역 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 상세 내용 -->
+                    <div class="custom-card p-8 md:p-10 mb-10">
+                        <h3 class="font-bold text-white mb-4 text-lg">초기 요청 메모</h3>
+                        <div id="displayDetails"
+                            class="text-sm bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.05)] p-5 md:p-6 rounded-xl text-[rgba(255,255,255,0.7)] whitespace-pre-wrap leading-relaxed">
+                            불러오는 중...
+                        </div>
+                    </div>
+
+                    <!-- 타임라인 -->
+                    <div id="timelineContainer"
+                        class="custom-card p-8 md:p-10 mb-10 overflow-hidden opacity-50 pointer-events-none">
+                        <h3 class="font-bold text-white mb-6 text-xl tracking-tight">전체 진행 타임라인</h3>
+                        <div class="overflow-x-auto custom-scrollbar pb-4">
+                            <div class="flex items-center min-w-max gap-4" id="horizontalTimelineSteps">
+                                <!-- JS에서 동적 생성 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 간트 차트 (일정표) -->
+                    <div id="ganttChartSection" class="custom-card p-8 md:p-10 mb-10 overflow-hidden hidden">
+                        <div class="flex justify-between items-end mb-8 border-b border-[rgba(255,255,255,0.1)] pb-4">
+                            <div>
+                                <h3 class="font-bold text-white text-xl tracking-tight flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-[#b7f932]" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                        </path>
+                                    </svg>
+                                    세부 진행 일정표
+                                </h3>
+                                <p class="text-[rgba(255,255,255,0.4)] text-sm mt-2">견적 확인 후 확정된 전체 프로젝트 세부 일정입니다.</p>
+                            </div>
+                        </div>
+                        <div class="w-full overflow-x-auto custom-scrollbar pb-4">
+                            <div class="min-w-[700px] relative mt-4" id="ganttChartArea">
+                                <!-- JS 동적 생성 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🚀 신규: 디자인 시안 확인 및 프로젝트 자료 -->
+                    <div id="deliverablesSection" class="custom-card p-8 md:p-10 mb-10 overflow-hidden hidden">
+                        <h3 class="font-bold text-white mb-6 text-xl tracking-tight flex items-center gap-2">
+                            <svg class="w-5 h-5 text-[#b7f932]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h14a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            프로젝트 산출물 자료
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="deliverablesGrid">
+                            <!-- JS에서 동적 생성 -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Invoice Tab -->
+            <div id="tabContent-invoice"
+                class="tab-content hidden w-full h-full md:p-6 overflow-hidden bg-[rgba(255,255,255,0.02)] backdrop-blur-md">
+                <iframe id="iframe-invoice" class="w-full h-full border-none rounded-xl bg-transparent" src=""></iframe>
+            </div>
+
+            <!-- Contract Tab -->
+            <div id="tabContent-contract"
+                class="tab-content hidden w-full h-full md:p-6 overflow-hidden bg-[rgba(255,255,255,0.02)] backdrop-blur-md">
+                <iframe id="iframe-contract" class="w-full h-full border-none rounded-xl bg-transparent"
+                    src=""></iframe>
+            </div>
+        </main>
+
+        <!-- 🚀 신규: 플로팅 카카오톡 상담 버튼 -->
+        <a href="https://pf.kakao.com/_PJyIX" target="_blank"
+            class="fixed bottom-24 right-6 md:bottom-8 md:right-8 z-50 flex items-center justify-center w-14 h-14 bg-[#FEE500] rounded-full shadow-lg hover:scale-110 transition-transform duration-200"
+            aria-label="카카오톡 1:1 상담">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#000000">
+                <path
+                    d="M12 3c-5.5 0-10 3.5-10 8 0 2.8 1.8 5.4 4.8 6.8-.2.7-1 3.2-1 3.5 0 .3.2.4.4.2.2-.1 3.5-2.4 4-2.8.6.1 1.2.1 1.8.1 5.5 0 10-3.5 10-8s-4.5-8-10-8z" />
+            </svg>
+            <!-- 툴팁 (선택 사항) -->
+            <span
+                class="absolute -top-10 right-0 bg-[#1a1a1a] text-white text-xs px-3 py-1.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                상담이 필요하신가요?
+            </span>
+        </a>
+
+    </div>
+
+    <script>
+        // 1. Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJeGRV5CnRoRwqoQ1igrjhHCJHCMow3L4",
+            authDomain: "sketchoo-2c343.firebaseapp.com",
+            projectId: "sketchoo-2c343",
+            storageBucket: "sketchoo-2c343.firebasestorage.app",
+            messagingSenderId: "1072809023897",
+            appId: "1:1072809023897:web:edc12722ad0d03b4a45b08"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const STATUS_MAP = {
+            '신규 접수': { percent: 10, idx: 0 },
+            '견적 발송': { percent: 30, idx: 1 },
+            '계약 완료': { percent: 50, idx: 2 },
+            '진행 중': { percent: 75, idx: 3 },
+            '제작 완료': { percent: 90, idx: 4 },
+            '인수인계': { percent: 100, idx: 5 }
+        };
+
+        const STEPS_INFO = [
+            { label: '문의 확인', desc: '담당자 배정 및 내용 검토' },
+            { label: '견적 발송', desc: '견적서 확인 및 피드백' },
+            { label: '계약 진행', desc: '온라인 전자계약 및 결제' },
+            { label: '실무 작업', desc: '디자인 및 개발 본작업 진행' },
+            { label: '제작 완료', desc: '최종 산출물 검수' },
+            { label: '프로젝트 종료', desc: '인수인계 및 가이드 전달' }
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const code = new URLSearchParams(window.location.search).get('code');
+            if (code) {
+                autoLoginWithCode(code.toUpperCase());
+            } else {
+                // 코드가 없으면 즉시 에러 표시
+                document.getElementById('loadingStatus').classList.add('hidden');
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        });
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Remove active from all tabs and contents
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+            // Add active to selected tab and content
+            // Desktop Sidebar
+            const sideBtn = document.getElementById('tabNav-' + tabId);
+            if (sideBtn) sideBtn.classList.add('active');
+
+            // Mobile Bottom Nav
+            const mobBtn = document.getElementById('tabNavMobile-' + tabId);
+            if (mobBtn) mobBtn.classList.add('active');
+
+            document.getElementById('tabContent-' + tabId).classList.remove('hidden');
+        }
+
+        function autoLoginWithCode(codeInput) {
+            if (!codeInput) return;
+
+            db.collection("contacts").where("accessCode", "==", codeInput).limit(1).get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        document.getElementById('loadingStatus').classList.add('hidden');
+                        document.getElementById('loginError').classList.remove('hidden');
+                        return;
+                    }
+
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('dashboardScreen').classList.remove('hidden');
+                    document.getElementById('dashboardScreen').classList.add('flex');
+
+                    let clientData;
+                    snapshot.forEach(doc => { clientData = doc.data(); });
+                    renderDashboard(clientData);
+
+                    // Set iframe sources properly
+                    document.getElementById('iframe-invoice').src = 'invoice.html?code=' + codeInput;
+                    document.getElementById('iframe-contract').src = 'contract.html?code=' + codeInput;
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert("서버 연결에 실패했습니다. 다시 시도해 주세요.");
+                });
+        }
+
+        function renderDashboard(data) {
+            document.getElementById('displayClientName').innerText = data.name || '고객';
+            document.getElementById('displayProjectType').innerText = data.projectType || '웹사이트';
+            document.getElementById('displayQuote').innerText = data.quoteAmount ? '₩ ' + data.quoteAmount : '산정 중';
+            document.getElementById('displayTimeline').innerText = data.timeline || '협의 필요';
+            document.getElementById('displayDetails').innerText = data.details || '입력하신 내용이 없습니다.';
+
+            const currentStatus = data.status || '신규 접수';
+            document.getElementById('displayStatusText').innerText = currentStatus;
+
+            if (data.lastUpdatedAt) {
+                document.getElementById('displayLastUpdated').innerText = data.lastUpdatedAt.toDate().toLocaleString('ko-KR');
+            } else if (data.createdAt) {
+                document.getElementById('displayLastUpdated').innerText = data.createdAt.toDate().toLocaleString('ko-KR') + " (최초 접수)";
+            }
+
+            const statusInfo = STATUS_MAP[currentStatus] || STATUS_MAP['신규 접수'];
+            const targetPercent = statusInfo.percent;
+
+            // 2 * PI * 42 = 263.89
+            const circumference = 263.89;
+            const offset = circumference - (targetPercent / 100) * circumference;
+
+            setTimeout(() => {
+                document.getElementById('progressCircle').style.strokeDashoffset = offset;
+                let count = 0;
+                const interval = setInterval(() => {
+                    count++;
+                    document.getElementById('progressPercent').innerText = count + '%';
+                    if (count >= targetPercent) clearInterval(interval);
+                }, 10);
+            }, 300);
+
+            let stepsHtml = '';
+            let timelineHtml = '';
+            STEPS_INFO.forEach((step, index) => {
+                const isCompleted = index < statusInfo.idx;
+                const isCurrent = index === statusInfo.idx;
+                const isLast = index === STEPS_INFO.length - 1;
+
+                let dotClass = 'step-dot';
+                let iconContent = `<span class="font-mont">${index + 1}</span>`;
+                let titleColor = 'text-[rgba(255,255,255,0.4)]';
+                let descColor = 'text-[rgba(255,255,255,0.3)]';
+                let lineClass = 'timeline-line';
+
+                if (isCompleted) {
+                    dotClass += ' done';
+                    titleColor = 'text-white';
+                    lineClass += ' done';
+                    iconContent = `<svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+                } else if (isCurrent) {
+                    dotClass += ' active';
+                    titleColor = 'text-[#b7f932]';
+                }
+
+                stepsHtml += `
+                    <div class="relative flex items-start mb-10 last:mb-0">
+                        ${!isLast ? `<div class="${lineClass}"></div>` : ''}
+                        <div class="${dotClass} shrink-0">${iconContent}</div>
+                        <div class="ml-5 pt-1">
+                            <h4 class="text-base font-bold ${titleColor} tracking-tight">${step.label}</h4>
+                            <p class="text-xs ${descColor} mt-1">${step.desc}</p>
+                        </div>
+                    </div>
+                `;
+
+                // 가로 타임라인 노드 HTML 구성
+                let tStatusClass = isCompleted ? 'border-[#b7f932] bg-[#b7f932] text-black' :
+                    (isCurrent ? 'border-[#b7f932] bg-[rgba(183,249,50,0.1)] text-[#b7f932]' : 'border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.05)] text-[rgba(255,255,255,0.4)]');
+
+                let tTitleClass = (isCompleted || isCurrent) ? 'text-white font-bold' : 'text-[rgba(255,255,255,0.5)]';
+
+                timelineHtml += `
+                    <div class="flex flex-col items-center w-32 relative shrink-0">
+                        <div class="w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-sm z-10 ${tStatusClass}">
+                            ${isCompleted ? '✓' : index + 1}
+                        </div>
+                        <div class="mt-4 text-sm text-center ${tTitleClass} whitespace-nowrap">${step.label}</div>
+                        ${!isLast ? `<div class="absolute top-5 left-[50%] w-full h-[2px] ${isCompleted ? 'bg-[#b7f932]' : 'bg-[rgba(255,255,255,0.1)]'} z-0 -translate-y-1/2 translate-x-[20px]"></div>` : ''}
+                    </div>
+                `;
+            });
+            document.getElementById('stepListContainer').innerHTML = stepsHtml;
+            document.getElementById('horizontalTimelineSteps').innerHTML = timelineHtml;
+
+            // Generate Calendar Gantt Chart HTML
+            let projectStartDate = new Date();
+            if (data.scheduleStartDate) {
+                if (data.scheduleStartDate.toDate) projectStartDate = data.scheduleStartDate.toDate();
+                else projectStartDate = new Date(data.scheduleStartDate); // HTML5 date input returns YYYY-MM-DD string, new Date(string) properly parses it
+            } else if (data.contractDate) {
+                if (data.contractDate.toDate) projectStartDate = data.contractDate.toDate();
+                else projectStartDate = new Date(data.contractDate);
+            } else {
+                projectStartDate = new Date(); // 계약 전이거나 날짜 미지정 시 오늘 기준으로 노출하여 이전 달 안 보이게 처리
+            }
+            const totalDays = 55; // Timeline duration
+            const startOffsetDays = 0; // 시작일 이전 날짜는 보여주지 않도록 0으로 설정
+            const chartStart = new Date(projectStartDate);
+            chartStart.setDate(chartStart.getDate() - startOffsetDays);
+
+            let days = [];
+            let currentLeft = 0;
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let todayLeft = -1;
+
+            for (let i = 0; i < totalDays; i++) {
+                const d = new Date(chartStart);
+                d.setDate(d.getDate() + i);
+                d.setHours(0, 0, 0, 0);
+
+                const isWeekend = (d.getDay() === 0 || d.getDay() === 6);
+                const width = 45; // widened to 45px for better readability and to prevent text wrapping
+
+                if (d.getTime() === today.getTime()) {
+                    todayLeft = currentLeft + (width / 2);
+                }
+
+                days.push({
+                    date: d,
+                    isWeekend: isWeekend,
+                    width: width,
+                    left: currentLeft,
+                    dayInfo: d.getDate(),
+                    dayName: dayNames[d.getDay()],
+                    month: d.getMonth() + 1,
+                    year: d.getFullYear()
+                });
+                currentLeft += width;
+            }
+
+            const totalWidth = currentLeft;
+            const headerWidth = 150;
+
+            let monthsHtml = '';
+            let currentMonthStr = '';
+            let monthStartLeft = 0;
+            let monthWidth = 0;
+
+            days.forEach((day, index) => {
+                const mStr = `${day.year}년 ${String(day.month).padStart(2, '0')}월`;
+                if (mStr !== currentMonthStr) {
+                    if (currentMonthStr !== '') {
+                        monthsHtml += `<div class="absolute border-r border-[rgba(255,255,255,0.05)] px-4 py-3 font-bold text-white box-border flex items-center bg-[rgba(255,255,255,0.02)]" style="left: ${monthStartLeft}px; width: ${monthWidth}px; justify-content: flex-start; overflow: hidden; white-space: nowrap; font-size: 13px;">${currentMonthStr}</div>`;
+                    }
+                    currentMonthStr = mStr;
+                    monthStartLeft = day.left;
+                    monthWidth = day.width;
+                } else {
+                    monthWidth += day.width;
+                }
+                if (index === days.length - 1) {
+                    monthsHtml += `<div class="absolute border-r border-[rgba(255,255,255,0.05)] px-4 py-3 font-bold text-white box-border flex items-center bg-[rgba(255,255,255,0.02)]" style="left: ${monthStartLeft}px; width: ${monthWidth}px; justify-content: flex-start; overflow: hidden; white-space: nowrap; font-size: 13px;">${currentMonthStr}</div>`;
+                }
+            });
+
+            let datesHtml = '';
+            let bgGridHtml = '';
+            days.forEach(day => {
+                const colorClass = day.isWeekend ? 'text-red-400' : 'text-[rgba(255,255,255,0.5)]';
+                const fontWeight = day.isWeekend ? 'font-bold' : 'font-normal';
+
+                datesHtml += `
+                    <div class="absolute border-r border-[rgba(255,255,255,0.05)] py-2 text-center box-border flex flex-col items-center justify-center leading-none transition-colors group-hover:bg-[rgba(255,255,255,0.02)]" style="left: ${day.left}px; width: ${day.width}px; height: 100%;">
+                        <div class="text-[13px] font-semibold ${day.isWeekend ? 'text-red-400' : 'text-white'}">${String(day.dayInfo).padStart(2, '0')}</div>
+                        <div class="text-[10px] mt-1.5 opacity-80 ${colorClass} ${fontWeight}">${day.dayName}</div>
+                    </div>
+                `;
+
+                if (day.isWeekend) {
+                    bgGridHtml += `<div class="absolute top-0 bottom-0 bg-[rgba(239,68,68,0.05)] z-[1] pointer-events-none" style="left: ${day.left}px; width: ${day.width}px;"></div>`;
+                }
+                if (!day.isWeekend && day.dayName === '월') {
+                    bgGridHtml += `<div class="absolute top-0 bottom-0 border-l border-[rgba(255,255,255,0.03)] z-[1] pointer-events-none" style="left: ${day.left}px; width: 1px;"></div>`;
+                }
+            });
+
+            if (todayLeft >= 0 && todayLeft <= totalWidth) {
+                const todayMarker = `
+                    <div class="absolute top-0 bottom-0 bg-orange-500 z-10 pointer-events-none" style="left: ${todayLeft}px; width: 1px;">
+                        <div class="absolute -top-[12px] -translate-x-1/2 bg-orange-500 text-white px-2 py-[2px] rounded text-[10px] font-bold whitespace-nowrap hidden md:block tracking-wide shadow-sm">오늘</div>
+                    </div>
+                `;
+                datesHtml += todayMarker;
+                bgGridHtml += `<div class="absolute top-0 bottom-0 bg-orange-500 z-[5] pointer-events-none" style="left: ${todayLeft}px; width: 2px;"></div>`;
+            }
+
+            const GANTT_STEPS = [
+                { label: "1차 시안", desc: "첫 번째 디자인 시안 전달" },
+                { label: "컨펌 (1차)", desc: "고객 피드백 및 논의" },
+                { label: "2차 시안", desc: "수정된 디자인 시안 전달" },
+                { label: "컨펌 (최종)", desc: "최종 피드백 및 확정" },
+                { label: "소유권 이전(완료)", desc: "원본 파일 및 프로젝트 양도" }
+            ];
+
+            const durations = [4, 2, 4, 3, 1];
+            const colors = ['#b7f932', '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'];
+            let taskRowsDesktopHtml = '';
+            let taskRowsMobileHtml = '';
+            let currentTaskStartDate = new Date(projectStartDate);
+
+            GANTT_STEPS.forEach((step, index) => {
+                const duration = durations[index] || 3;
+                const endDate = new Date(currentTaskStartDate);
+                endDate.setDate(endDate.getDate() + duration);
+
+                const renderStartObj = days.find(d => currentTaskStartDate.getTime() >= d.date.getTime() && currentTaskStartDate.getTime() < d.date.getTime() + 86400000);
+                const renderEndObj = days.find(d => endDate.getTime() >= d.date.getTime() && endDate.getTime() < d.date.getTime() + 86400000);
+
+                let barLeft = renderStartObj ? renderStartObj.left : 0;
+                let barRight = renderEndObj ? renderEndObj.left : totalWidth;
+                if (!renderStartObj && currentTaskStartDate.getTime() < chartStart.getTime()) barLeft = 0;
+                if (!renderEndObj && endDate.getTime() > days[days.length - 1].date.getTime()) barRight = totalWidth;
+
+                const barWidth = Math.max(barRight - barLeft, 30);
+
+                const startStr = `${String(currentTaskStartDate.getMonth() + 1).padStart(2, '0')}/${String(currentTaskStartDate.getDate()).padStart(2, '0')}`;
+                const endStr = `${String(endDate.getMonth() + 1).padStart(2, '0')}/${String(endDate.getDate()).padStart(2, '0')}`;
+                const plannedDateStr = `${currentTaskStartDate.getFullYear()}-${String(currentTaskStartDate.getMonth() + 1).padStart(2, '0')}-${String(currentTaskStartDate.getDate()).padStart(2, '0')}`;
+
+                const ganttCurrentIdx = data.ganttStep !== undefined ? data.ganttStep : 0;
+                const isCompleted = index < ganttCurrentIdx;
+                const isCurrent = index === ganttCurrentIdx;
+
+                // --- 데스크탑용 바 스타일 ---
+                let barStyle = 'background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);';
+                let checkIcon = '';
+                if (isCompleted) {
+                    barStyle = `background: ${colors[index]}; color: ${colors[index] === '#b7f932' ? '#000' : '#fff'}; box-shadow: 0 2px 10px ${colors[index]}30; border-radius: 8px;`;
+                    checkIcon = '<svg class="w-3.5 h-3.5 mr-1.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>';
+                } else if (isCurrent) {
+                    barStyle = `background: ${colors[index]}15; border: 1.5px dashed ${colors[index]}; color: ${colors[index]}; border-radius: 8px; box-shadow: 0 0 15px ${colors[index]}20; font-weight: bold;`;
+                }
+
+                taskRowsDesktopHtml += `
+                    <div class="flex relative items-center border-b last:border-0 border-[rgba(255,255,255,0.05)] h-20 w-full group hover:bg-[rgba(255,255,255,0.02)] transition-colors">
+                        <div class="w-[180px] shrink-0 px-6 py-4 border-r border-[rgba(255,255,255,0.05)] bg-[#1e1e1e] flex flex-col justify-center h-full sticky left-0 z-[20] shadow-[4px_0_12px_rgba(0,0,0,0.1)]">
+                            <div class="text-[14px] font-bold ${isCurrent ? 'text-[#b7f932]' : 'text-white'} truncate leading-tight tracking-tight">${step.label}</div>
+                            <div class="text-[11px] text-[rgba(255,255,255,0.4)] mt-1.5 truncate flex items-center gap-1.5"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${plannedDateStr}</div>
+                        </div>
+                        <div class="relative h-full overflow-hidden" style="width: ${totalWidth}px; min-width: ${totalWidth}px;">
+                            ${bgGridHtml}
+                            <div class="absolute top-[50%] -translate-y-1/2 h-[44px] flex items-center justify-center text-[11px] font-semibold transition-all duration-300 z-[10] hover:brightness-110 cursor-default"
+                                 style="left: ${barLeft}px; width: ${barWidth}px; ${barStyle}">
+                                ${isCompleted || barWidth >= 90 ? `<span class="truncate px-3 flex items-center justify-center w-full">${checkIcon}${startStr} - ${endStr}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // --- 모바일용 세로 리스트 스타일 ---
+                let mobileStatusClass = 'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.4)]';
+                let mobileTitleColor = 'text-white';
+                let mobileDateColor = 'text-[rgba(255,255,255,0.4)]';
+                let mobileBadge = '';
+                let mobileBadgeBg = '';
+
+                if (isCompleted) {
+                    mobileStatusClass = `border-[${colors[index]}] shadow-[0_4px_15px_${colors[index]}20]`;
+                    mobileStatusClass += colors[index] === '#b7f932' ? ' bg-[rgba(183,249,50,0.05)]' : ` bg-[${colors[index]}10]`;
+                    mobileTitleColor = `text-[${colors[index]}] font-extrabold`;
+                    mobileDateColor = `text-[${colors[index]}] opacity-80`;
+                    mobileBadgeBg = colors[index];
+                    mobileBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider float-right shadow-sm" style="background:${colors[index]}; color:${colors[index] === '#b7f932' ? '#000' : '#fff'}">완료</span>`;
+                } else if (isCurrent) {
+                    mobileStatusClass = `border-[${colors[index]}] border-dashed bg-[rgba(255,255,255,0.02)] shadow-[0_0_15px_${colors[index]}20]`;
+                    mobileTitleColor = `text-[${colors[index]}] font-bold`;
+                    mobileDateColor = 'text-[rgba(255,255,255,0.7)] font-medium';
+                    mobileBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider float-right" style="background:transparent; border: 1px solid ${colors[index]}; color:${colors[index]}">진행중</span>`;
+                }
+
+                taskRowsMobileHtml += `
+                    <div class="flex gap-3 w-full mb-4 last:mb-0">
+                        <!-- 타임라인 라인 -->
+                        <div class="flex flex-col items-center max-w-[12px] shrink-0">
+                            <div class="w-2.5 h-2.5 rounded-full z-10 shrink-0 ${isCompleted || isCurrent ? `shadow-[0_0_8px_${colors[index]}]` : 'opacity-40'}" style="background: ${isCompleted || isCurrent ? colors[index] : '#666'}; mt-1.5"></div>
+                            ${index < GANTT_STEPS.length - 1 ? `<div class="w-[1.5px] bg-[rgba(255,255,255,0.1)] flex-1 my-1"></div>` : ''}
+                        </div>
+                        
+                        <!-- 카드 내용 -->
+                        <div class="flex-1 pb-4 min-w-0">
+                            <div class="border rounded-xl p-3 sm:p-4 transition-all w-full box-border ${mobileStatusClass}">
+                                <div class="flex justify-between items-start mb-2 gap-1.5">
+                                    <h4 class="text-[14px] sm:text-[15px] ${mobileTitleColor} leading-tight truncate shrink">${step.label}</h4>
+                                    <div class="shrink-0 max-w-fit">${mobileBadge}</div>
+                                </div>
+                                <p class="text-[11px] sm:text-[12px] opacity-60 mb-3 break-keep min-w-0">${step.desc}</p>
+                                <div class="flex items-center gap-1.5 text-[10px] sm:text-[11px] ${mobileDateColor} bg-[rgba(0,0,0,0.2)] px-2.5 py-1.5 rounded border border-[rgba(255,255,255,0.05)] w-fit max-w-full">
+                                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    <span class="truncate">${plannedDateStr} ~ ${endStr}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                currentTaskStartDate = new Date(endDate);
+            });
+
+            let ganttHtml = `
+                <!-- 🖥️ 데스크탑/태블릿용 가로 스크롤 간트 차트 -->
+                <div class="hidden md:block border border-[rgba(255,255,255,0.05)] rounded-lg overflow-hidden bg-[#1e1e1e] w-full">
+                    <div class="overflow-x-auto overflow-y-hidden custom-scrollbar pb-2 relative" id="ganttScrollWrapper">
+                        <div style="min-width: ${headerWidth + totalWidth}px;">
+                            <!-- Month Header -->
+                            <div class="flex border-b border-[rgba(255,255,255,0.05)] h-[48px] bg-[rgba(255,255,255,0.02)]">
+                                <div class="w-[180px] shrink-0 border-r border-[rgba(255,255,255,0.05)] sticky left-0 z-[30] bg-[#1e1e1e] shadow-[4px_0_12px_rgba(0,0,0,0.1)]"></div>
+                                <div class="relative flex-1">
+                                    ${monthsHtml}
+                                </div>
+                            </div>
+                            <!-- Date Header -->
+                            <div class="flex border-b-2 border-[rgba(255,255,255,0.1)] h-[56px] bg-[rgba(255,255,255,0.02)]">
+                                <div class="w-[180px] shrink-0 border-r border-[rgba(255,255,255,0.05)] text-[rgba(255,255,255,0.5)] font-bold text-xs px-6 flex items-center justify-start sticky left-0 z-[30] bg-[#1e1e1e] shadow-[4px_0_12px_rgba(0,0,0,0.1)] tracking-widest uppercase">
+                                    Timeline
+                                </div>
+                                <div class="relative flex-1">
+                                    <div class="absolute top-[2px] bottom-0 left-0 right-0">${datesHtml}</div>
+                                </div>
+                            </div>
+                            <!-- Task Rows -->
+                            <div class="flex flex-col bg-[#141414]">
+                                ${taskRowsDesktopHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 📱 모바일용 세로 타임라인 카드 리스트 -->
+                <div class="block md:hidden w-full pt-4">
+                    ${taskRowsMobileHtml}
+                </div>
+            `;
+
+            document.getElementById('ganttChartArea').innerHTML = ganttHtml;
+
+            setTimeout(() => {
+                const scrollWrapper = document.getElementById('ganttScrollWrapper');
+                if (scrollWrapper && todayLeft > 0) {
+                    const scrollPos = todayLeft - (scrollWrapper.clientWidth / 2) + 180;
+                    if (scrollPos > 0) scrollWrapper.scrollLeft = scrollPos;
+                }
+            }, 100);
+
+            // 추가 로직: 상태에 따른 문서 및 탭 UI 제어
+            const tabInvoice = document.getElementById('tabNav-invoice');
+            const tabContract = document.getElementById('tabNav-contract');
+            const docCard = document.getElementById('dashboard-doc-card');
+            const docLink = document.getElementById('dashboard-doc-link');
+            const timelineContainer = document.getElementById('timelineContainer');
+            const ganttChartSection = document.getElementById('ganttChartSection');
+
+            // 견적 발송 (idx 1 이상)
+            if (statusInfo.idx >= 1) {
+                timelineContainer.classList.remove('opacity-50', 'pointer-events-none');
+                ganttChartSection.classList.remove('hidden');
+
+                tabInvoice.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                tabInvoice.setAttribute('onclick', "switchTab('invoice')");
+                document.getElementById('label-invoice').innerText = '견적서';
+
+                // --- 📱 모바일 바 동기화 ---
+                const mInv = document.getElementById('tabNavMobile-invoice');
+                if (mInv) {
+                    mInv.classList.remove('opacity-40', 'pointer-events-none');
+                    mInv.setAttribute('onclick', "switchTab('invoice')");
+                }
+
+                docCard.classList.remove('opacity-50');
+                docCard.classList.add('hover:border-white', 'cursor-pointer');
+                docCard.setAttribute('onclick', "switchTab('invoice')");
+                docLink.className = "text-white font-bold text-sm md:text-base mt-1 flex items-center gap-1";
+                docLink.innerHTML = '견적서 확인 <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform text-[#b7f932]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+            }
+
+            // 계약 완료 (idx 2 이상)
+            if (statusInfo.idx >= 2) {
+                tabContract.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                tabContract.setAttribute('onclick', "switchTab('contract')");
+                document.getElementById('label-contract').innerText = '계약서';
+
+                // --- 📱 모바일 바 동기화 ---
+                const mCon = document.getElementById('tabNavMobile-contract');
+                if (mCon) {
+                    mCon.classList.remove('opacity-40', 'pointer-events-none');
+                    mCon.setAttribute('onclick', "switchTab('contract')");
+                }
+
+                if (statusInfo.idx >= 3) {
+                    docCard.setAttribute('onclick', "switchTab('contract')"); // 진행 중에는 계약서가 가장 중요문서
+                    docLink.innerHTML = '계약서 확인 <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform text-[#b7f932]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>';
+                }
+            }
+
+            // --- 🚀 신규: 산출물 렌더링 로직 ---
+            const deliverables = [
+                { title: '1차 시안', link: data.draft1Link, date: '시안 작업 단계' },
+                { title: '2차 시안', link: data.draft2Link, date: '수정 보완 단계' },
+                { title: '최종 산출물', link: data.finalDraftLink, date: '소유권 이전' }
+            ];
+
+            let delHtml = '';
+            let hasDeliverable = false;
+            deliverables.forEach(item => {
+                const isActive = !!item.link;
+                if (isActive) hasDeliverable = true;
+
+                delHtml += `
+                    <div class="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.1)] rounded-xl p-6 flex flex-col items-center text-center transition-all ${isActive ? 'hover:border-[#b7f932] group cursor-pointer' : 'opacity-40 grayscale'}">
+                        <div class="w-12 h-12 rounded-full mb-4 flex items-center justify-center ${isActive ? 'bg-[#b7f932] text-black' : 'bg-[rgba(255,255,255,0.1)] text-white'}">
+                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        </div>
+                        <h4 class="font-bold text-white mb-1 uppercase tracking-tighter text-sm">${item.title}</h4>
+                        <p class="text-[10px] text-[rgba(255,255,255,0.4)] mb-4">${item.date}</p>
+                        ${isActive ?
+                        `<a href="${item.link}" target="_blank" class="w-full bg-[#b7f932] text-black py-2 rounded-lg font-bold text-xs hover:bg-[#a6e625] transition-colors">자료 확인하기</a>` :
+                        `<span class="w-full bg-[rgba(255,255,255,0.05)] text-[rgba(255,255,255,0.3)] py-2 rounded-lg font-bold text-xs cursor-not-allowed">준비 중</span>`
+                    }
+                    </div>
+                `;
+            });
+            document.getElementById('deliverablesGrid').innerHTML = delHtml;
+
+            // 시안이 하나라도 있거나 진행중 상태면 섹션 노출
+            if (hasDeliverable || statusInfo.idx >= 3) {
+                document.getElementById('deliverablesSection').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+
+</html>

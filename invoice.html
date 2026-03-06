@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>견적서 - SKETCH O-O</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Pretendard:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --accent: #b7f932;
+            --black: #0a0a0a;
+            --bg: #242424;
+            --white: #ffffff;
+            --text-sub: rgba(255, 255, 255, 0.6);
+            --border: rgba(255, 255, 255, 0.15);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-hover: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--bg);
+            color: var(--white);
+        }
+
+        .font-mont {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .logo {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 26px;
+            font-weight: 900;
+            color: var(--white);
+            letter-spacing: -1px;
+            text-transform: uppercase;
+        }
+
+        .custom-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .custom-btn {
+            background: var(--accent);
+            color: var(--black);
+            transition: all 0.2s;
+            font-weight: 700;
+        }
+
+        .custom-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(183, 249, 50, 0.3);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--white);
+            transition: all 0.2s;
+        }
+
+        .btn-ghost:hover {
+            background: var(--card-hover);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        table th {
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--accent);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+
+        table td {
+            border-bottom: 1px solid var(--border);
+            color: var(--white);
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .custom-card {
+                background: white !important;
+                border: none !important;
+                box-shadow: none !important;
+                color: black !important;
+            }
+
+            .logo {
+                color: black !important;
+            }
+
+            * {
+                color: black !important;
+                border-color: #ddd !important;
+            }
+
+            table th {
+                background: #f3f4f6 !important;
+                color: black !important;
+            }
+
+            .text-sub-print {
+                color: #666 !important;
+            }
+
+            .text-red-500 {
+                color: #ef4444 !important;
+            }
+
+            .border-red-500\/50 {
+                border-color: rgba(239, 68, 68, 0.5) !important;
+            }
+        }
+
+        /* html2pdf 완벽 다운로드 전용 스타일 (Tailwind 강제 덮어쓰기) */
+        body.pdf-mode {
+            background: white !important;
+            color: black !important;
+        }
+
+        body.pdf-mode * {
+            color: black !important;
+            border-color: #ddd !important;
+        }
+
+        body.pdf-mode .no-print {
+            display: none !important;
+        }
+
+        body.pdf-mode .custom-card {
+            background: white !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        body.pdf-mode table th {
+            background-color: #f3f4f6 !important;
+            color: black !important;
+            border-bottom: 2px solid #ccc !important;
+        }
+
+        body.pdf-mode table td {
+            border-bottom: 1px solid #ddd !important;
+        }
+
+        /* 다크모드 배경색 -> 밝은 회색으로 변경 */
+        body.pdf-mode .bg-\[rgba\(0\,0\,0\,0\.2\)\],
+        body.pdf-mode .bg-\[rgba\(255\,255\,255\,0\.02\)\] {
+            background-color: #f3f4f6 !important;
+        }
+
+        /* 옅은 흰색 텍스트 -> 어두운 회색으로 변경 */
+        body.pdf-mode .text-white {
+            color: black !important;
+        }
+
+        body.pdf-mode .text-\[rgba\(255\,255\,255\,0\.9\)\],
+        body.pdf-mode .text-\[rgba\(255\,255\,255\,0\.6\)\],
+        body.pdf-mode .text-\[rgba\(255\,255\,255\,0\.4\)\] {
+            color: #444 !important;
+            font-weight: 500 !important;
+        }
+
+        body.pdf-mode .text-sub-print {
+            color: #555 !important;
+        }
+
+        /* 포인트 컬러(네온그린) -> 검정색으로 변경 */
+        body.pdf-mode .text-\[\#b7f932\],
+        body.pdf-mode .text-\[rgba\(183\,249\,50\,0\.8\)\] {
+            color: black !important;
+            font-weight: 800 !important;
+        }
+
+        /* 테두리(다크모드용 옅은 흰색) -> 옅은 회색으로 변경 */
+        body.pdf-mode .border-\[rgba\(255\,255\,255\,0\.15\)\],
+        body.pdf-mode .border-\[rgba\(255\,255\,255\,0\.1\)\],
+        body.pdf-mode .border-\[rgba\(255\,255\,255\,0\.05\)\] {
+            border-color: #ccc !important;
+        }
+
+        body.pdf-mode .text-red-500 {
+            color: #ef4444 !important;
+        }
+
+        body.pdf-mode .border-red-500\/50 {
+            border-color: rgba(239, 68, 68, 0.5) !important;
+        }
+    </style>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body class="antialiased min-h-screen py-10 px-4 md:px-10">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- 상단 버튼 (인쇄 영역 제외) -->
+        <div class="flex justify-between items-center mb-6 no-print">
+            <button onclick="history.back()" class="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                대시보드로 돌아가기
+            </button>
+            <button onclick="downloadPDF()" class="custom-btn px-6 py-2 rounded-lg flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                PDF 다운로드 / 인쇄
+            </button>
+        </div>
+
+        <!-- 견적서 본문 -->
+        <div id="invoice-content" class="custom-card p-8 md:p-12">
+
+            <!-- 헤더 -->
+            <div class="flex justify-between items-start border-b border-[rgba(255,255,255,0.15)] pb-6 mb-8">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-black tracking-tight mb-2">견적서 <span
+                            class="text-lg text-[rgba(255,255,255,0.4)] font-normal ml-2 font-mont uppercase tracking-widest">Estimate</span>
+                    </h1>
+                    <p class="text-sm text-sub-print" style="color: var(--text-sub);">
+                        <span class="mr-4"><strong>Date:</strong> <span id="invDate">-</span></span>
+                        <span><strong>No:</strong> <span id="invNo" class="font-mont">-</span></span>
+                    </p>
+                </div>
+                <div class="logo text-right">SKETCH OO.</div>
+            </div>
+
+            <!-- 정보 Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                <!-- 공급자 -->
+                <div>
+                    <p class="text-xs font-bold text-[rgba(255,255,255,0.4)] tracking-widest uppercase mb-3">Supplier
+                    </p>
+                    <div class="flex items-center gap-2 mb-3">
+                        <strong class="text-lg text-white text-sub-print">스케치오오 (SKETCH O-O)</strong>
+                        <!-- (도장) -->
+                        <div class="w-10 h-10 rounded-full border border-red-500/50 flex items-center justify-center text-red-500 text-[10px] font-bold opacity-80"
+                            style="transform: rotate(-10deg);">직인생략</div>
+                    </div>
+                    <div class="text-sm leading-relaxed text-sub-print" style="color: var(--text-sub);">
+                        <p><strong>대표</strong> 스케치</p>
+                        <p><strong>이메일</strong> hello@sketch-oo.com</p>
+                        <p><strong>주소</strong> 서울특별시 강남구</p>
+                    </div>
+                </div>
+
+                <!-- 수신자 -->
+                <div>
+                    <p class="text-xs font-bold text-accent tracking-widest uppercase mb-3"
+                        style="color: var(--accent);">Client</p>
+                    <div class="mb-3">
+                        <strong class="text-xl text-white text-sub-print" id="clientName">-</strong> 귀하
+                    </div>
+                    <div class="text-sm leading-relaxed text-sub-print" style="color: var(--text-sub);">
+                        <p><strong>프로젝트</strong> <span id="clientProject">-</span></p>
+                        <p><strong>연락처</strong> <span id="clientPhone">-</span></p>
+                        <p><strong>이메일</strong> <span id="clientEmail">-</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 항목 테이블 -->
+            <div class="mb-10 overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr>
+                            <th class="py-3 px-4 rounded-tl-lg">Project Type</th>
+                            <th class="py-3 px-4 text-center">Qty</th>
+                            <th class="py-3 px-4 text-right rounded-tr-lg">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="py-4 px-4 font-bold" id="itemType">-</td>
+                            <td class="py-4 px-4 text-center text-sub-print text-[rgba(255,255,255,0.6)]">1</td>
+                            <td class="py-4 px-4 text-right font-mont font-bold text-lg" id="itemAmount">-</td>
+                        </tr>
+                        <!-- 협의 사항 추가 배용 등 빈칸 영역 -->
+                        <tr>
+                            <td class="py-4 px-4 text-sm text-[rgba(255,255,255,0.4)] text-sub-print">기타 협의 진행 비용 (기획,
+                                디자인 리소스 등)</td>
+                            <td class="py-4 px-4 text-center text-[rgba(255,255,255,0.4)] text-sub-print">-</td>
+                            <td class="py-4 px-4 text-right text-[rgba(255,255,255,0.4)] text-sub-print text-sm">포함</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 border-t border-[rgba(255,255,255,0.15)] pt-8">
+                <!-- 하단 참고사항 -->
+                <div class="text-sm text-sub-print" style="color: var(--text-sub);">
+                    <h4 class="font-bold text-white mb-3 tracking-widest text-xs uppercase"
+                        style="color: var(--text-sub);">Notes.</h4>
+                    <ul class="list-disc pl-4 space-y-2">
+                        <li>본 견적은 착수 전 개략적인 예상 금액이며, 상세 기획/디자인 요구사항에 따라 변동될 수 있습니다.</li>
+                        <li>도메인 보안서버(SSL) 및 호스팅 비용은 별도입니다.</li>
+                        <li>결제 조건: 착수금 50%, 잔금 50% (조율 가능)</li>
+                    </ul>
+                </div>
+
+                <!-- 총 합계 금액 및 계약금 -->
+                <div class="bg-[rgba(0,0,0,0.2)] p-6 rounded-xl border border-[rgba(255,255,255,0.05)] text-sub-print">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm text-[rgba(255,255,255,0.6)]">공급가액</span>
+                        <span class="font-mont" id="sumSupply">-</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-4 pb-4 border-b border-[rgba(255,255,255,0.1)]">
+                        <span class="text-sm text-[rgba(255,255,255,0.6)]">부가세 (VAT)</span>
+                        <span class="font-mont" id="sumVat">-</span>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm font-bold text-white">총 결제예정금액</span>
+                        <span class="text-lg font-bold font-mont text-white tracking-tight" id="sumTotal"
+                            style="color: var(--white);">-</span>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-1 pt-3 border-t border-[rgba(255,255,255,0.05)]">
+                        <span class="text-sm text-[rgba(183,249,50,0.8)]">계약 착수금 (50%)</span>
+                        <span class="text-xl font-black font-mont text-[#b7f932] tracking-tight" id="depositAmount"
+                            style="color: var(--accent);">-</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-[rgba(255,255,255,0.4)]">잔금 (50%) - 작업 완료 후 결제</span>
+                        <span class="text-sm font-medium font-mont text-[rgba(255,255,255,0.6)]"
+                            id="remainingAmount">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 계좌 정보 -->
+            <div class="mt-8 pt-6 border-t border-[rgba(255,255,255,0.15)] flex justify-between items-center">
+                <div class="text-sm text-sub-print" style="color: var(--text-sub);">
+                    <p class="font-bold text-white mb-1 tracking-widest text-[10px] uppercase">Bank Account</p>
+                    <p>우리은행 1002-000-000000 (예금주: 스케치오오)</p>
+                </div>
+                <div class="logo opacity-20 text-sm no-print">SKETCH OO.</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJeGRV5CnRoRwqoQ1igrjhHCJHCMow3L4",
+            authDomain: "sketchoo-2c343.firebaseapp.com",
+            projectId: "sketchoo-2c343"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 번호 포맷 (1,000,000)
+        function formatNumber(num) { return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const code = new URLSearchParams(window.location.search).get('code');
+            if (!code) {
+                alert('잘못된 접근입니다.'); history.back(); return;
+            }
+
+            db.collection("contacts").where("accessCode", "==", code).limit(1).get()
+                .then(snapshot => {
+                    if (snapshot.empty) { alert('코드가 유효하지 않습니다.'); history.back(); return; }
+
+                    let data;
+                    let docId;
+                    snapshot.forEach(doc => { data = doc.data(); docId = doc.id; });
+
+                    // 날짜 및 번호
+                    const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
+                    document.getElementById('invDate').innerText = dateObj.toLocaleDateString('ko-KR');
+                    document.getElementById('invNo').innerText = "EST-" + dateObj.getTime().toString().slice(-8);
+
+                    // 고객 정보
+                    document.getElementById('clientName').innerText = data.name || '고객';
+                    document.getElementById('clientProject').innerText = data.projectType || '-';
+                    document.getElementById('clientPhone').innerText = data.phone || '-';
+                    document.getElementById('clientEmail').innerText = data.email || '-';
+
+                    // === 동적 아이템 테이블 렌더링 ===
+                    const tbody = document.querySelector('table tbody');
+                    tbody.innerHTML = ''; // 초기화
+
+                    let totalSupply = 0;
+                    if (data.invoiceItems) {
+                        const itemsObj = data.invoiceItems.split('\n');
+                        itemsObj.forEach(itemLine => {
+                            if (!itemLine.trim()) return;
+                            const parts = itemLine.split(',');
+                            const itemName = parts[0] ? parts[0].trim() : '이름 없음';
+                            const itemPriceStr = parts[1] ? parts[1].replace(/[^0-9]/g, '') : '0';
+                            let itemPrice = parseInt(itemPriceStr, 10);
+                            if (isNaN(itemPrice)) itemPrice = 0;
+                            // 만원 단위 입력 보정 로직 방지 (명시적으로 단위 맞췄다고 가정)
+
+                            totalSupply += itemPrice;
+
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td class="py-4 px-4 font-bold">${itemName}</td>
+                                    <td class="py-4 px-4 text-center text-sub-print text-[rgba(255,255,255,0.6)]">1</td>
+                                    <td class="py-4 px-4 text-right font-mont font-bold text-lg">₩ ${formatNumber(itemPrice)}</td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        // 기존 더미 데이터 유지 (호환성)
+                        document.getElementById('itemType').id = ''; // 충돌 방지
+                        let rawAmount = parseInt((data.quoteAmount || '0').replace(/[^0-9]/g, ''), 10);
+                        if (isNaN(rawAmount)) rawAmount = 0;
+                        if (rawAmount > 0 && rawAmount < 100000) rawAmount = rawAmount * 10000;
+                        totalSupply = Math.round(rawAmount / 1.1); // 기본 로직
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td class="py-4 px-4 font-bold" id="itemType">${data.projectType || '웹'} 기획 및 디자인 구축</td>
+                                <td class="py-4 px-4 text-center text-sub-print text-[rgba(255,255,255,0.6)]">1</td>
+                                <td class="py-4 px-4 text-right font-mont font-bold text-lg" id="itemAmount">₩ ${formatNumber(totalSupply)}</td>
+                            </tr>
+                        `;
+                    }
+
+                    // 총합 계산
+                    if (totalSupply > 0) {
+                        const vat = Math.round(totalSupply * 0.1);
+                        const total = totalSupply + vat;
+                        const deposit = Math.round(total * 0.5);
+                        const remaining = total - deposit;
+
+                        document.getElementById('sumSupply').innerText = '₩ ' + formatNumber(totalSupply);
+                        document.getElementById('sumVat').innerText = '₩ ' + formatNumber(vat);
+                        document.getElementById('sumTotal').innerText = '₩ ' + formatNumber(total);
+                        document.getElementById('depositAmount').innerText = '₩ ' + formatNumber(deposit);
+                        document.getElementById('remainingAmount').innerText = '₩ ' + formatNumber(remaining);
+                    } else {
+                        document.getElementById('sumSupply').innerText = '-';
+                        document.getElementById('sumVat').innerText = '-';
+                        document.getElementById('sumTotal').innerText = '산정 중';
+                        document.getElementById('depositAmount').innerText = '-';
+                        document.getElementById('remainingAmount').innerText = '-';
+                    }
+
+
+
+                    // 특약 사항 (Notes) 가 텍스트 영역으로 입력된 경우 처리 (선택)
+                    if (data.contractTerms) {
+                        const notesList = document.querySelector('.list-disc.pl-4');
+                        if (notesList) {
+                            notesList.innerHTML = '';
+                            data.contractTerms.split('\n').forEach(line => {
+                                if (line.trim()) {
+                                    notesList.innerHTML += `<li>${line.trim()}</li>`;
+                                }
+                            });
+                            // 기본 결제 조건 추가
+                            notesList.innerHTML += `<li>결제 조건: 착수금 50%, 잔금 50% (변경 가능)</li>`;
+                        }
+                    }
+                })
+                .catch(e => console.error(e));
+        });
+
+        function downloadPDF() {
+            const element = document.getElementById('invoice-content');
+
+            // 1. 상태 저장
+            const originalBackground = element.style.backgroundColor;
+            const originalColor = element.style.color;
+            const originalBorder = element.style.border;
+            const originalBoxShadow = element.style.boxShadow;
+
+            // PDF 전용 부모 레이아웃 강제
+            element.style.setProperty('background-color', '#ffffff', 'important');
+            element.style.setProperty('color', '#000000', 'important');
+            element.style.setProperty('border', 'none', 'important');
+            element.style.setProperty('box-shadow', 'none', 'important');
+
+            const allElements = element.querySelectorAll('*');
+            const originalStyles = [];
+
+            allElements.forEach(el => {
+                const computed = window.getComputedStyle(el);
+
+                // 원래 인라인 스타일 저장
+                originalStyles.push({
+                    el: el,
+                    color: el.style.color,
+                    backgroundColor: el.style.backgroundColor,
+                    borderColor: el.style.borderColor
+                });
+
+                // 텍스트 색상 검정색 변환 (흰색/포인트색상)
+                if (computed.color.includes('255, 255, 255') || computed.color.includes('183, 249, 50') || computed.color === 'rgb(255, 255, 255)') {
+                    el.style.setProperty('color', '#111111', 'important');
+                }
+
+                // 배경 변환 (다크모드 회색/반투명흰색 -> 밝은 회색)
+                if ((computed.backgroundColor.includes('rgba(0, 0, 0') || computed.backgroundColor.includes('rgba(255, 255, 255')) && computed.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+                    el.style.setProperty('background-color', '#f3f4f6', 'important');
+                }
+
+                // 테두리 회색 변환
+                if (computed.borderColor.includes('255, 255, 255')) {
+                    el.style.setProperty('border-color', '#dddddd', 'important');
+                }
+
+                // Table 헤더 예외 처리
+                if (el.tagName === 'TH') {
+                    el.style.setProperty('background-color', '#e5e7eb', 'important');
+                    el.style.setProperty('color', '#000000', 'important');
+                }
+                if (el.tagName === 'TD') {
+                    el.style.setProperty('border-color', '#dddddd', 'important');
+                }
+            });
+
+            // "직인생략" 도장 특별 처리
+            const stamps = element.querySelectorAll('.text-red-500');
+            stamps.forEach(stamp => {
+                stamp.style.setProperty('color', '#ef4444', 'important');
+                stamp.style.setProperty('border-color', 'rgba(239, 68, 68, 0.5)', 'important');
+            });
+
+            const opt = {
+                margin: 0,
+                filename: '견적서_SKETCH-OO_' + document.getElementById('clientName').innerText + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                // 다운로드 완료 후 원상 복구
+                element.style.backgroundColor = originalBackground;
+                element.style.color = originalColor;
+                element.style.border = originalBorder;
+                element.style.boxShadow = originalBoxShadow;
+
+                originalStyles.forEach(item => {
+                    item.el.style.color = item.color;
+                    item.el.style.backgroundColor = item.backgroundColor;
+                    item.el.style.borderColor = item.borderColor;
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
