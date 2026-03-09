@@ -610,7 +610,12 @@
                 document.getElementById('displayLastUpdated').innerText = data.createdAt.toDate().toLocaleString('ko-KR') + " (최초 접수)";
             }
 
-            const statusInfo = STATUS_MAP[currentStatus] || STATUS_MAP['신규 접수'];
+            // '계약서 전달 (서명 대기)' 같은 예전/오타 데이터 호환성 처리
+            let mappedStatus = currentStatus;
+            if (currentStatus.includes('계약서 전달')) mappedStatus = '계약서 전달';
+            if (currentStatus.includes('견적 발송')) mappedStatus = '견적 발송';
+
+            const statusInfo = STATUS_MAP[mappedStatus] || STATUS_MAP['신규 접수'];
             const targetPercent = statusInfo.percent;
 
             // 2 * PI * 42 = 263.89
