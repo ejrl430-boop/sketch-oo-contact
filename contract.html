@@ -192,9 +192,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 
-<body class="antialiased min-h-screen py-10 px-4 md:px-10">
-
-    <div class="max-w-4xl mx-auto">
+<body class="antialiased min-h-screen py-0 px-4 md:px-10"> <!-- py-10에서 py-0으로 조정(아이프레임 꽉 차게) -->
+    <div class="max-w-4xl mx-auto pt-10"> <!-- 상단 여백 보정 -->
         <!-- 상단 버튼 (인쇄 영역 제외) -->
         <div class="flex justify-end items-center mb-6 no-print">
             <button onclick="downloadPDF()" class="custom-btn px-6 py-2 rounded-lg flex items-center gap-2">
@@ -415,7 +414,10 @@
         const firebaseConfig = {
             apiKey: "AIzaSyDJeGRV5CnRoRwqoQ1igrjhHCJHCMow3L4",
             authDomain: "sketchoo-2c343.firebaseapp.com",
-            projectId: "sketchoo-2c343"
+            projectId: "sketchoo-2c343",
+            storageBucket: "sketchoo-2c343.firebasestorage.app",
+            messagingSenderId: "1072809023897",
+            appId: "1:1072809023897:web:edc12722ad0d03b4a45b08"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -616,7 +618,8 @@
 
             db.collection("contacts").doc(currentDocId).update({
                 signatureDataUrl: dataUrl,
-                status: "계약 완료" // 서명 시 상태도 자동 업데이트 (선택 사항이나 멋진 흐름을 위해)
+                status: "계약 완료",
+                signedAt: firebase.firestore.FieldValue.serverTimestamp() // 🚀 서명 일시 실시간 기록
             }).then(() => {
                 closeSignatureModal();
                 renderSignature(dataUrl);
