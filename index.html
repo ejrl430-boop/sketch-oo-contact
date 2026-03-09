@@ -2288,12 +2288,25 @@
         updateNav();
 
         // ── AUTO-FORMAT PHONE NUMBER ──
+        document.getElementById('inp-phone').addEventListener('keydown', function (e) {
+            if (e.key === 'Backspace') {
+                const val = e.target.value;
+                const pos = e.target.selectionStart;
+                // 커서 바로 앞이 하이픈이면 하이픈까지 같이 삭제
+                if (pos === e.target.selectionEnd && pos > 0 && val[pos - 1] === '-') {
+                    e.preventDefault();
+                    const newVal = val.slice(0, pos - 1) + val.slice(pos);
+                    e.target.value = newVal;
+                    e.target.setSelectionRange(pos - 1, pos - 1);
+                }
+            }
+        });
         document.getElementById('inp-phone').addEventListener('input', function (e) {
             let val = e.target.value.replace(/[^0-9]/g, '');
             let res = '';
-            if (val.length < 4) {
+            if (val.length <= 3) {
                 res = val;
-            } else if (val.length < 7) {
+            } else if (val.length <= 7) {
                 res = val.substr(0, 3) + '-' + val.substr(3);
             } else if (val.length === 10) {
                 res = val.substr(0, 3) + '-' + val.substr(3, 3) + '-' + val.substr(6);
