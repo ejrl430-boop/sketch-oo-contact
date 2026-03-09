@@ -50,10 +50,9 @@
 
         .custom-card {
             background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
+            border: none;
+            border-radius: 0;
             box-shadow: none;
-            /* 흰색 테마는 그림자 제거 혹은 아주 연하게 */
         }
 
         .custom-btn {
@@ -197,14 +196,7 @@
 
     <div class="max-w-4xl mx-auto">
         <!-- 상단 버튼 (인쇄 영역 제외) -->
-        <div class="flex justify-between items-center mb-6 no-print">
-            <button onclick="history.back()" class="btn-ghost px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                대시보드로 돌아가기
-            </button>
+        <div class="flex justify-end items-center mb-6 no-print">
             <button onclick="downloadPDF()" class="custom-btn px-6 py-2 rounded-lg flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
