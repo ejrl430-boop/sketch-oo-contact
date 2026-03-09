@@ -229,7 +229,7 @@
     <!-- 📊 통계 대시보드 (로그인 후 표시) -->
     <div id="statsDashboard" class="max-w-7xl mx-auto mb-8 hidden">
         <!-- KPI 카드 4개 -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-5">
             <div class="stat-card" id="kpiCard-all" onclick="setKpiFilter('all')" title="전체 문의 보기">
                 <div class="stat-icon" style="background:#eef2ff;color:#6366f1">📋</div>
                 <div class="stat-val" id="kpi-total">--</div>
@@ -250,6 +250,12 @@
                 <div class="stat-icon" style="background:#fefce8;color:#f59e0b">🔔</div>
                 <div class="stat-val" id="kpi-new" style="color:#f59e0b">--</div>
                 <div class="stat-lbl">미응대 (신규접수)</div>
+            </div>
+            <div class="stat-card" id="kpiCard-contracted" onclick="setKpiFilter('contracted')" title="계약/결제 완료 보기"
+                style="border-left:4px solid #9333ea">
+                <div class="stat-icon" style="background:#f3e8ff;color:#9333ea">✅</div>
+                <div class="stat-val" id="kpi-contracted" style="color:#9333ea">--</div>
+                <div class="stat-lbl">계약/결제 완료</div>
             </div>
         </div>
         <!-- 분석 차트 3개 -->
@@ -563,7 +569,7 @@
         function setKpiFilter(type) {
             activeKpiFilter = type === activeKpiFilter ? 'all' : type; // 다시 누르면 전체 해제
             // 카드 하이라이트
-            ['all', 'month', 'inprogress', 'new'].forEach(k => {
+            ['all', 'month', 'inprogress', 'new', 'contracted'].forEach(k => {
                 const card = document.getElementById('kpiCard-' + k);
                 if (card) {
                     card.classList.toggle('kpi-active', activeKpiFilter === k && activeKpiFilter !== 'all');
@@ -571,7 +577,7 @@
             });
             // 필터 배지 표시
             const badge = document.getElementById('kpiFilterBadge');
-            const labels = { month: '이번달 신규', inprogress: '진행 중', new: '미응대 (신규접수)' };
+            const labels = { month: '이번달 신규', inprogress: '진행 중', new: '미응대 (신규접수)', contracted: '계약/결제 완료' };
             if (activeKpiFilter !== 'all' && badge) {
                 badge.classList.remove('hidden');
                 badge.innerHTML = `<span class="kpi-filter-badge">🔍 ${labels[activeKpiFilter]} 필터 적용 중 <button onclick="setKpiFilter('all')">✕</button></span>`;
@@ -647,6 +653,8 @@
                         if (data.status !== '진행 중') isMatch = false;
                     } else if (activeKpiFilter === 'new') {
                         if (data.status && data.status !== '신규 접수') isMatch = false;
+                    } else if (activeKpiFilter === 'contracted') {
+                        if (data.status !== '계약 완료') isMatch = false;
                     }
 
                     if (!isMatch) return; // 필터 조건에 안 맞으면 넘어가기
@@ -813,11 +821,17 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-500 mb-1">연락처</p>
-                        <p class="font-medium text-gray-900">${data.phone || '-'}</p>
+                        <div class="flex items-center gap-2">
+                            <p class="font-medium text-gray-900">${data.phone || '-'}</p>
+                            ${data.phone ? `<button onclick="copyToClipboard('${data.phone}', this)" class="text-xs px-2 py-1 bg-gray-100 border border-gray-200 text-gray-600 rounded hover:bg-gray-200 transition-colors">복사</button>` : ''}
+                        </div>
                     </div>
                     <div>
                         <p class="text-sm text-gray-500 mb-1">이메일</p>
-                        <p class="font-medium text-blue-600 underline">${data.email || '-'}</p>
+                        <div class="flex items-center gap-2">
+                            <p class="font-medium text-blue-600 underline truncate max-w-[200px]">${data.email || '-'}</p>
+                            ${data.email ? `<button onclick="copyToClipboard('${data.email}', this)" class="text-xs px-2 py-1 bg-gray-100 border border-gray-200 text-gray-600 rounded hover:bg-gray-200 transition-colors">복사</button>` : ''}
+                        </div>
                     </div>
                 </div>
 
@@ -1103,6 +1117,23 @@
             document.getElementById('editAccessCode').value = result;
         }
 
+        function copyToClipboard(text, btnElement) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btnElement.innerText;
+                const originalBg = btnElement.className;
+
+                btnElement.innerText = '복사됨!';
+                btnElement.className = 'text-xs px-2 py-1 bg-emerald-100 border border-emerald-200 text-emerald-700 rounded font-bold transition-all';
+
+                setTimeout(() => {
+                    btnElement.innerText = originalText;
+                    btnElement.className = originalBg;
+                }, 1000);
+            }).catch(err => {
+                alert('복사에 실패했습니다.');
+            });
+        }
+
         function copyAccessCode() {
             const codeInput = document.getElementById('editAccessCode');
             const code = codeInput.value.trim();
@@ -1218,6 +1249,10 @@
                 document.getElementById('kpi-month').textContent = thisMonth.length;
                 document.getElementById('kpi-inprogress').textContent = all.filter(d => d.status === '진행 중').length;
                 document.getElementById('kpi-new').textContent = all.filter(d => !d.status || d.status === '신규 접수').length;
+
+                const contractedCount = all.filter(d => d.status === '계약 완료').length;
+                const kpiContracted = document.getElementById('kpi-contracted');
+                if (kpiContracted) kpiContracted.textContent = contractedCount;
                 renderBarChart('chart-referral', countField(all, 'referralPath'));
                 renderBarChart('chart-type', countField(all, 'projectType'));
                 renderBarChart('chart-status', countField(all, 'status', '신규 접수'));
