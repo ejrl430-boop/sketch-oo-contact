@@ -475,16 +475,13 @@
             </div>
 
             <!-- Invoice Tab -->
-            <div id="tabContent-invoice"
-                class="tab-content hidden w-full h-full md:p-6 overflow-hidden bg-[rgba(255,255,255,0.02)] backdrop-blur-md">
-                <iframe id="iframe-invoice" class="w-full h-full border-none rounded-xl bg-transparent" src=""></iframe>
+            <div id="tabContent-invoice" class="tab-content hidden w-full h-full overflow-hidden bg-white">
+                <iframe id="iframe-invoice" class="w-full h-full border-none bg-white" src=""></iframe>
             </div>
 
             <!-- Contract Tab -->
-            <div id="tabContent-contract"
-                class="tab-content hidden w-full h-full md:p-6 overflow-hidden bg-[rgba(255,255,255,0.02)] backdrop-blur-md">
-                <iframe id="iframe-contract" class="w-full h-full border-none rounded-xl bg-transparent"
-                    src=""></iframe>
+            <div id="tabContent-contract" class="tab-content hidden w-full h-full overflow-hidden bg-white">
+                <iframe id="iframe-contract" class="w-full h-full border-none bg-white" src=""></iframe>
             </div>
         </main>
 
@@ -521,6 +518,7 @@
         const STATUS_MAP = {
             '신규 접수': { percent: 10, idx: 0 },
             '견적 발송': { percent: 30, idx: 1 },
+            '계약서 전달': { percent: 40, idx: 2 },
             '계약 완료': { percent: 50, idx: 2 },
             '진행 중': { percent: 75, idx: 3 },
             '제작 완료': { percent: 90, idx: 4 },
