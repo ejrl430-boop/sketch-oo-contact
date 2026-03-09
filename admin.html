@@ -757,9 +757,8 @@
             }
 
             // --- 🚀 프로페셔널 도메인 적용 (sketchoo.kr) ---
-            const domain = "sketchoo.kr";
-            // 아임웹 메뉴 주소 체계에 맞춰 .html을 제거하고 /client 로 변경
-            const link = "https://" + domain + "/client?code=" + code;
+            // --- 🚀 아임웹 대시보드 주소 사용 (아이프레임 연동용) ---
+            const link = "https://sketchoo.kr/client?code=" + code;
 
             navigator.clipboard.writeText(link).then(() => {
                 alert('고객 안내용 자동 로그인 링크가 복사되었습니다! 🎉\n\n' + link + '\n\n위 주소를 고객님께 전달하시면 로그인 과정 없이 바로 접속됩니다.');
