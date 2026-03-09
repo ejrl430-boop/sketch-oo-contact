@@ -2287,20 +2287,19 @@
         initNav();
         updateNav();
 
-        // ── AUTO-FORMAT PHONE NUMBER (버그 완전 수정) ──
+        // ── AUTO-FORMAT PHONE NUMBER (최종 수정) ──
         (function () {
             const inp = document.getElementById('inp-phone');
-            let isDeleting = false;
-
-            inp.addEventListener('keydown', function (e) {
-                isDeleting = (e.key === 'Backspace' || e.key === 'Delete');
-            });
 
             inp.addEventListener('input', function (e) {
                 const el = e.target;
                 const cursorPos = el.selectionStart;
-                const raw = el.value.replace(/[^0-9]/g, '').slice(0, 11);
+                const prevVal = el.value;
 
+                // 숫자만 추출 (최대 11자리)
+                const raw = prevVal.replace(/[^0-9]/g, '').slice(0, 11);
+
+                // 포맷 적용
                 let formatted = '';
                 if (raw.length <= 3) {
                     formatted = raw;
@@ -2310,25 +2309,19 @@
                     formatted = raw.slice(0, 3) + '-' + raw.slice(3, 7) + '-' + raw.slice(7);
                 }
 
-                // 이전 값에서 커서 앞까지 숫자 수 계산 → 새 값에서 같은 숫자 수 위치로 복원
-                const prevVal = el.value;
-                let digitsBeforeCursor = prevVal.slice(0, cursorPos).replace(/[^0-9]/g, '').length;
-                // 삭제 중이고 커서가 하이픈 바로 뒤였다면 앞 쪽 숫자를 같이 지움
-                if (isDeleting && cursorPos > 0 && prevVal[cursorPos - 1] === '-') {
-                    digitsBeforeCursor = Math.max(0, digitsBeforeCursor - 1);
-                }
+                // 커서 앞 숫자 수를 그대로 새 포맷에서 복원 (특별 처리 없이 순수 digit count)
+                const digitsBeforeCursor = prevVal.slice(0, cursorPos).replace(/[^0-9]/g, '').length;
 
                 el.value = formatted;
 
-                // 새 커서 위치: formatted에서 숫자 카운트가 digitsBeforeCursor 되는 위치
-                let newCursor = 0, digitCount = 0;
+                // 새 커서 위치: digit 수 기준 복원
+                let newCursor = formatted.length;
+                let digitCount = 0;
                 for (let i = 0; i < formatted.length; i++) {
                     if (digitCount === digitsBeforeCursor) { newCursor = i; break; }
                     if (/[0-9]/.test(formatted[i])) digitCount++;
-                    newCursor = i + 1;
                 }
                 el.setSelectionRange(newCursor, newCursor);
-                isDeleting = false;
             });
         })();
     </script>
