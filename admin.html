@@ -157,6 +157,45 @@
             cursor: pointer;
             accent-color: #6366f1;
         }
+
+        /* KPI 카드 클릭 스타일 */
+        .stat-card {
+            cursor: pointer;
+            transition: transform .15s, box-shadow .15s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, .15);
+        }
+
+        .stat-card.kpi-active {
+            outline: 2.5px solid #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, .1);
+        }
+
+        .kpi-filter-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid #c7d2fe;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: .78rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .kpi-filter-badge button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6366f1;
+            font-size: 1rem;
+            line-height: 1;
+        }
     </style>
 
     <!-- Firebase -->
@@ -191,22 +230,23 @@
     <div id="statsDashboard" class="max-w-7xl mx-auto mb-8 hidden">
         <!-- KPI 카드 4개 -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-            <div class="stat-card">
+            <div class="stat-card" id="kpiCard-all" onclick="setKpiFilter('all')" title="전체 문의 보기">
                 <div class="stat-icon" style="background:#eef2ff;color:#6366f1">📋</div>
                 <div class="stat-val" id="kpi-total">--</div>
                 <div class="stat-lbl">총 문의</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" id="kpiCard-month" onclick="setKpiFilter('month')" title="이번달 신규 보기">
                 <div class="stat-icon" style="background:#ecfdf5;color:#10b981">🆕</div>
                 <div class="stat-val" id="kpi-month" style="color:#10b981">--</div>
                 <div class="stat-lbl">이번달 신규</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" id="kpiCard-inprogress" onclick="setKpiFilter('inprogress')" title="진행 중 보기">
                 <div class="stat-icon" style="background:#faf5ff;color:#8b5cf6">⚡</div>
                 <div class="stat-val" id="kpi-inprogress" style="color:#8b5cf6">--</div>
                 <div class="stat-lbl">진행 중</div>
             </div>
-            <div class="stat-card" style="border-left:4px solid #f59e0b">
+            <div class="stat-card" id="kpiCard-new" onclick="setKpiFilter('new')" title="미응대 보기"
+                style="border-left:4px solid #f59e0b">
                 <div class="stat-icon" style="background:#fefce8;color:#f59e0b">🔔</div>
                 <div class="stat-val" id="kpi-new" style="color:#f59e0b">--</div>
                 <div class="stat-lbl">미응대 (신규접수)</div>
@@ -268,6 +308,7 @@
         </div>
 
         <!-- 테이블 카드 -->
+        <div id="kpiFilterBadge" class="hidden"></div>
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -517,6 +558,28 @@
 
         // 2. Load Data from Firestore
         let inquiriesData = {};
+        let activeKpiFilter = 'all'; // 'all' | 'month' | 'inprogress' | 'new'
+
+        function setKpiFilter(type) {
+            activeKpiFilter = type === activeKpiFilter ? 'all' : type; // 다시 누르면 전체 해제
+            // 카드 하이라이트
+            ['all', 'month', 'inprogress', 'new'].forEach(k => {
+                const card = document.getElementById('kpiCard-' + k);
+                if (card) {
+                    card.classList.toggle('kpi-active', activeKpiFilter === k && activeKpiFilter !== 'all');
+                }
+            });
+            // 필터 배지 표시
+            const badge = document.getElementById('kpiFilterBadge');
+            const labels = { month: '이번달 신규', inprogress: '진행 중', new: '미응대 (신규접수)' };
+            if (activeKpiFilter !== 'all' && badge) {
+                badge.classList.remove('hidden');
+                badge.innerHTML = `<span class="kpi-filter-badge">🔍 ${labels[activeKpiFilter]} 필터 적용 중 <button onclick="setKpiFilter('all')">✕</button></span>`;
+            } else if (badge) {
+                badge.classList.add('hidden');
+            }
+            loadInquiries();
+        }
 
         function loadInquiries() {
             const list = document.getElementById('inquiryList');
@@ -573,9 +636,17 @@
                     if (searchInput) {
                         const nameMatch = data.name && data.name.toLowerCase().includes(searchInput);
                         const phoneMatch = data.phone && data.phone.toLowerCase().includes(searchInput);
-                        if (!nameMatch && !phoneMatch) {
-                            isMatch = false;
-                        }
+                        if (!nameMatch && !phoneMatch) isMatch = false;
+                    }
+
+                    // 3. KPI 필터
+                    if (activeKpiFilter === 'month') {
+                        const now = new Date();
+                        if (!itemDate || itemDate.getMonth() !== now.getMonth() || itemDate.getFullYear() !== now.getFullYear()) isMatch = false;
+                    } else if (activeKpiFilter === 'inprogress') {
+                        if (data.status !== '진행 중') isMatch = false;
+                    } else if (activeKpiFilter === 'new') {
+                        if (data.status && data.status !== '신규 접수') isMatch = false;
                     }
 
                     if (!isMatch) return; // 필터 조건에 안 맞으면 넘어가기
@@ -802,19 +873,24 @@
                             <input type="date" id="editStartDate" value="${data.scheduleStartDate ? (typeof data.scheduleStartDate === 'string' ? data.scheduleStartDate : (data.scheduleStartDate.toDate ? data.scheduleStartDate.toDate().toISOString().split('T')[0] : '')) : ''}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-700">
                         </div>
 
-                        <!-- 접속 코드 -->
-                        <div>
-                            <div class="flex justify-between items-center mb-1">
-                                <label class="block text-sm font-semibold text-gray-700">고객 접속 코드 (고유값)</label>
-                                <div class="flex gap-3">
-                                    <button onclick="copyAccessCode()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
-                                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                                        복사
-                                    </button>
-                                    <button onclick="generateRandomCode()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">자동 생성</button>
-                                </div>
+                        <!-- 접속 코드 (숨김 — 내부적으로만 사용) -->
+                        <input type="hidden" id="editAccessCode" value="${data.accessCode || ''}">
+                        <!-- 고객 대시보드 링크 -->
+                        <div class="md:col-span-3 mt-1">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">고객 대시보드 링크</label>
+                            <div class="flex gap-2">
+                                <input type="text" readonly id="clientLinkDisplay" value="${data.accessCode ? (window.location.origin + '/client.html?code=' + data.accessCode) : '(접속 코드 없음)'}" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-600 font-mono truncate">
+                                <button onclick="copyClientLink()" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 text-sm font-medium whitespace-nowrap">🔗 복사</button>
                             </div>
-                            <input type="text" id="editAccessCode" value="${data.accessCode || ''}" placeholder="예: XJ4K" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                        </div>
+                        <!-- 견적서 / 계약서 바로 보기 -->
+                        <div class="md:col-span-3 mt-2 flex gap-3">
+                            <button onclick="openDocPreview('invoice')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 font-semibold text-sm transition-colors">
+                                📄 견적서 보기
+                            </button>
+                            <button onclick="openDocPreview('contract')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 font-semibold text-sm transition-colors">
+                                📋 계약서 보기
+                            </button>
                         </div>
                     </div>
 
@@ -1157,6 +1233,22 @@
             const code = document.getElementById('editAccessCode') ? document.getElementById('editAccessCode').value.trim() : '';
             if (!code) { alert('먼저 접속 코드를 입력하고 저장해주세요.'); return; }
             window.open('client.html?code=' + code, '_blank');
+        }
+
+        // ── 고객 대시보드 링크 복사 ──
+        function copyClientLink() {
+            const el = document.getElementById('clientLinkDisplay');
+            if (!el || !el.value || el.value.includes('없음')) { alert('유효한 접속 코드가 없습니다.'); return; }
+            navigator.clipboard.writeText(el.value)
+                .then(() => alert('✅ 고객 링크가 복사되었습니다!\n\n' + el.value))
+                .catch(() => { el.select(); document.execCommand('copy'); alert('✅ 복사 완료!'); });
+        }
+
+        // ── 견적서 / 계약서 바로 열기 ──
+        function openDocPreview(type) {
+            const code = document.getElementById('editAccessCode')?.value.trim();
+            if (!code) { alert('접속 코드가 없습니다. 저장 후 다시 시도해주세요.'); return; }
+            window.open(type + '.html?code=' + code, '_blank');
         }
     </script>
 </body>
