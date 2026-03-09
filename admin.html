@@ -774,6 +774,32 @@
                 dateStr = dateObj.toLocaleString('ko-KR');
             }
 
+            // 🚀 신규 문의 접속 코드 자동 발급 로직
+            let currentAccessCode = data.accessCode;
+            let displayLinkHtml = '';
+
+            if (currentAccessCode) {
+                displayLinkHtml = `
+                    <input type="text" readonly id="clientLinkDisplay" value="https://sketch-oo-contact-u6ml.vercel.app/client.html?code=${currentAccessCode}" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-600 font-mono truncate">
+                    <button onclick="copyClientLink()" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 text-sm font-medium whitespace-nowrap">🔗 복사</button>
+                `;
+            } else {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let result = '';
+                for (let i = 0; i < 4; i++) {
+                    result += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                currentAccessCode = result;
+
+                displayLinkHtml = `
+                    <div class="w-full flex gap-2">
+                        <input type="text" readonly id="clientLinkDisplay" value="https://sketch-oo-contact-u6ml.vercel.app/client.html?code=${currentAccessCode}" class="flex-1 border border-indigo-200 rounded-lg px-3 py-2 text-sm bg-indigo-50 text-indigo-700 font-mono font-bold border-dashed truncate">
+                        <button onclick="copyClientLink()" class="px-3 py-2 bg-indigo-600 border border-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-bold whitespace-nowrap shadow-sm">🔗 신규 복사</button>
+                    </div>
+                    <p class="w-full mt-1.5 text-xs text-indigo-600 font-medium">✨ 링크가 자동 발급되었습니다. <strong>[변경사항 저장하기]</strong>를 눌러야 저장됩니다.</p>
+                `;
+            }
+
             const body = document.getElementById('modalBody');
             body.innerHTML = `
                 <div class="grid grid-cols-2 gap-y-5 gap-x-6 mb-6">
@@ -874,13 +900,12 @@
                         </div>
 
                         <!-- 접속 코드 (숨김 — 내부적으로만 사용) -->
-                        <input type="hidden" id="editAccessCode" value="${data.accessCode || ''}">
+                        <input type="hidden" id="editAccessCode" value="${currentAccessCode}">
                         <!-- 고객 대시보드 링크 -->
                         <div class="md:col-span-3 mt-1">
                             <label class="block text-sm font-semibold text-gray-700 mb-1">고객 대시보드 링크</label>
-                            <div class="flex gap-2">
-                                <input type="text" readonly id="clientLinkDisplay" value="${data.accessCode ? ('https://sketch-oo-contact-u6ml.vercel.app/client.html?code=' + data.accessCode) : '(접속 코드 없음)'}" class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-600 font-mono truncate">
-                                <button onclick="copyClientLink()" class="px-3 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 text-sm font-medium whitespace-nowrap">🔗 복사</button>
+                            <div class="flex flex-col gap-1 w-full">
+                                ${displayLinkHtml}
                             </div>
                         </div>
                         <!-- 견적서 / 계약서 바로 보기 -->
