@@ -2287,34 +2287,50 @@
         initNav();
         updateNav();
 
-        // ── AUTO-FORMAT PHONE NUMBER ──
-        document.getElementById('inp-phone').addEventListener('keydown', function (e) {
-            if (e.key === 'Backspace') {
-                const val = e.target.value;
-                const pos = e.target.selectionStart;
-                // 커서 바로 앞이 하이픈이면 하이픈까지 같이 삭제
-                if (pos === e.target.selectionEnd && pos > 0 && val[pos - 1] === '-') {
-                    e.preventDefault();
-                    const newVal = val.slice(0, pos - 1) + val.slice(pos);
-                    e.target.value = newVal;
-                    e.target.setSelectionRange(pos - 1, pos - 1);
+        // ── AUTO-FORMAT PHONE NUMBER (버그 완전 수정) ──
+        (function () {
+            const inp = document.getElementById('inp-phone');
+            let isDeleting = false;
+
+            inp.addEventListener('keydown', function (e) {
+                isDeleting = (e.key === 'Backspace' || e.key === 'Delete');
+            });
+
+            inp.addEventListener('input', function (e) {
+                const el = e.target;
+                const cursorPos = el.selectionStart;
+                const raw = el.value.replace(/[^0-9]/g, '').slice(0, 11);
+
+                let formatted = '';
+                if (raw.length <= 3) {
+                    formatted = raw;
+                } else if (raw.length <= 7) {
+                    formatted = raw.slice(0, 3) + '-' + raw.slice(3);
+                } else {
+                    formatted = raw.slice(0, 3) + '-' + raw.slice(3, 7) + '-' + raw.slice(7);
                 }
-            }
-        });
-        document.getElementById('inp-phone').addEventListener('input', function (e) {
-            let val = e.target.value.replace(/[^0-9]/g, '');
-            let res = '';
-            if (val.length <= 3) {
-                res = val;
-            } else if (val.length <= 7) {
-                res = val.substr(0, 3) + '-' + val.substr(3);
-            } else if (val.length === 10) {
-                res = val.substr(0, 3) + '-' + val.substr(3, 3) + '-' + val.substr(6);
-            } else {
-                res = val.substr(0, 3) + '-' + val.substr(3, 4) + '-' + val.substr(7, 4);
-            }
-            e.target.value = res;
-        });
+
+                // 이전 값에서 커서 앞까지 숫자 수 계산 → 새 값에서 같은 숫자 수 위치로 복원
+                const prevVal = el.value;
+                let digitsBeforeCursor = prevVal.slice(0, cursorPos).replace(/[^0-9]/g, '').length;
+                // 삭제 중이고 커서가 하이픈 바로 뒤였다면 앞 쪽 숫자를 같이 지움
+                if (isDeleting && cursorPos > 0 && prevVal[cursorPos - 1] === '-') {
+                    digitsBeforeCursor = Math.max(0, digitsBeforeCursor - 1);
+                }
+
+                el.value = formatted;
+
+                // 새 커서 위치: formatted에서 숫자 카운트가 digitsBeforeCursor 되는 위치
+                let newCursor = 0, digitCount = 0;
+                for (let i = 0; i < formatted.length; i++) {
+                    if (digitCount === digitsBeforeCursor) { newCursor = i; break; }
+                    if (/[0-9]/.test(formatted[i])) digitCount++;
+                    newCursor = i + 1;
+                }
+                el.setSelectionRange(newCursor, newCursor);
+                isDeleting = false;
+            });
+        })();
     </script>
 </body>
 

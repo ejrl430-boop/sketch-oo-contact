@@ -115,6 +115,48 @@
             background: linear-gradient(90deg, #6366f1, #8b5cf6);
             transition: width .6s ease;
         }
+
+        /* ── 일괄 처리 툴바 ── */
+        #bulkBar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            transition: transform .3s cubic-bezier(.16, 1, .3, 1), opacity .3s;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999;
+            white-space: nowrap;
+            background: #1e1b4b;
+            color: #fff;
+            border-radius: 14px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(79, 70, 229, .35);
+        }
+
+        #bulkBar.visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .bulk-sep {
+            width: 1px;
+            height: 20px;
+            background: rgba(255, 255, 255, .2);
+        }
+
+        /* 콘텐츠 체크박스 스타일 */
+        input[type=checkbox].row-check,
+        #checkAll {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #6366f1;
+        }
     </style>
 
     <!-- Firebase -->
@@ -225,12 +267,15 @@
             </div>
         </div>
 
-        <!-- Table Card -->
+        <!-- 테이블 카드 -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
+                            <th scope="col" class="px-4 py-4 w-10">
+                                <input type="checkbox" id="checkAll" title="전체 선택" onchange="toggleAll(this)">
+                            </th>
                             <th scope="col"
                                 class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 접수일</th>
@@ -257,6 +302,31 @@
                 </table>
             </div>
         </div>
+    </div>
+
+    <!-- 📦 일괄 처리 툴바 (체크 시 표시) -->
+    <div id="bulkBar">
+        <span id="bulkCount" class="text-sm font-bold text-indigo-200">0개 선택됨</span>
+        <div class="bulk-sep"></div>
+        <select id="bulkStatusSel"
+            class="text-sm bg-[#312e81] text-white border border-indigo-400 rounded-lg px-3 py-1.5 focus:outline-none cursor-pointer">
+            <option value="">— 상태 일괄변경 —</option>
+            <option value="신규 접수">📥 신규 접수</option>
+            <option value="견적 발송">💰 견적 발송</option>
+            <option value="계약서 전달">✍️ 계약서 전달</option>
+            <option value="계약 완료">✅ 계약 완료</option>
+            <option value="진행 중">⚡ 진행 중</option>
+            <option value="제작 완료">🎉 제작 완료</option>
+            <option value="인수인계">🏁 인수인계</option>
+        </select>
+        <button onclick="bulkStatusChange()"
+            class="text-xs bg-indigo-500 hover:bg-indigo-400 text-white font-bold px-4 py-1.5 rounded-lg transition-colors">적용</button>
+        <div class="bulk-sep"></div>
+        <button onclick="bulkDelete()"
+            class="text-xs bg-red-500 hover:bg-red-400 text-white font-bold px-4 py-1.5 rounded-lg transition-colors">🗑️
+            선택 삭제</button>
+        <button onclick="clearAllChecks()"
+            class="text-xs text-indigo-300 hover:text-white transition-colors ml-1">✕</button>
     </div>
 
     <!-- Modal for details (Hidden by default) -->
@@ -521,13 +591,16 @@
                     if (status === '견적 발송') statusColor = "bg-blue-100 text-blue-800";
                     if (status === '계약 완료') statusColor = "bg-purple-100 text-purple-800";
                     if (status === '진행 중') statusColor = "bg-green-100 text-green-800";
-                    if (status === '제작 완료') statusColor = "bg-indigo-100 text-indigo-800";
-                    if (status === '인수인계') statusColor = "bg-gray-100 text-gray-800";
+                    if (status === '계약서 전달') statusColor = "bg-orange-100 text-orange-700";
 
                     // 테이블 행 생성
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-gray-50 transition-colors";
+                    tr.dataset.id = id;
                     tr.innerHTML = `
+                        <td class="px-4 py-4">
+                            <input type="checkbox" class="row-check" data-id="${id}" onchange="updateBulkBar()">
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${dateStr}</td>
                         <td class="px-6 py-4">
                             <div class="text-sm font-bold text-gray-900">${data.name || '-'}</div>
@@ -555,12 +628,68 @@
                 });
 
                 if (displayCount === 0) {
-                    list.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-gray-500 font-medium">검색 결과가 없습니다. 조건을 확인해주세요.</td></tr>`;
+                    list.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500 font-medium">검색 결과가 없습니다. 조건을 확인해주세요.</td></tr>`;
                 }
             }).catch((error) => {
                 console.error("Error getting documents: ", error);
-                list.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-red-500 font-medium">데이터를 불러오는데 실패했습니다. 인터넷 연결을 확인해주세요.</td></tr>`;
+                list.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-red-500 font-medium">데이터를 불러오는데 실패했습니다. 인터넷 연결을 확인해주세요.</td></tr>`;
             });
+        }
+
+        // ── 일괄 처리 툴바 업데이트 ──
+        function updateBulkBar() {
+            const checked = document.querySelectorAll('.row-check:checked');
+            const bar = document.getElementById('bulkBar');
+            const countEl = document.getElementById('bulkCount');
+            countEl.textContent = checked.length + '개 선택됨';
+            if (checked.length > 0) bar.classList.add('visible');
+            else bar.classList.remove('visible');
+            // 전체 체크박스 상태 업데이트
+            const all = document.querySelectorAll('.row-check');
+            const allChecked = document.getElementById('checkAll');
+            if (allChecked) allChecked.indeterminate = checked.length > 0 && checked.length < all.length;
+            if (allChecked && checked.length === all.length && all.length > 0) { allChecked.indeterminate = false; allChecked.checked = true; }
+            if (allChecked && checked.length === 0) { allChecked.indeterminate = false; allChecked.checked = false; }
+        }
+
+        function toggleAll(masterCb) {
+            document.querySelectorAll('.row-check').forEach(cb => cb.checked = masterCb.checked);
+            updateBulkBar();
+        }
+
+        function clearAllChecks() {
+            document.querySelectorAll('.row-check').forEach(cb => cb.checked = false);
+            const allChecked = document.getElementById('checkAll');
+            if (allChecked) { allChecked.checked = false; allChecked.indeterminate = false; }
+            document.getElementById('bulkBar').classList.remove('visible');
+        }
+
+        function getCheckedIds() {
+            return [...document.querySelectorAll('.row-check:checked')].map(cb => cb.dataset.id);
+        }
+
+        function bulkDelete() {
+            const ids = getCheckedIds();
+            if (!ids.length) return;
+            if (!confirm(`⚠️ 선택한 ${ids.length}개 문의를 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+            const batch = db.batch();
+            ids.forEach(id => batch.delete(db.collection('contacts').doc(id)));
+            batch.commit()
+                .then(() => { clearAllChecks(); loadInquiries(); loadStats(); alert(`✅ ${ids.length}개 항목이 삭제되었습니다.`); })
+                .catch(e => alert('삭제 오류: ' + e.message));
+        }
+
+        function bulkStatusChange() {
+            const ids = getCheckedIds();
+            const newStatus = document.getElementById('bulkStatusSel').value;
+            if (!ids.length) return;
+            if (!newStatus) { alert('상태를 선택해주세요.'); return; }
+            if (!confirm(`${ids.length}개 항목의 상태를 '​${newStatus}​'로 변경하시겠습니까?`)) return;
+            const batch = db.batch();
+            ids.forEach(id => batch.update(db.collection('contacts').doc(id), { status: newStatus, lastUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
+            batch.commit()
+                .then(() => { clearAllChecks(); loadInquiries(); loadStats(); alert(`✅ ${ids.length}개 항목의 상태가 변경되었습니다.`); })
+                .catch(e => alert('상태 변경 오류: ' + e.message));
         }
 
         // 3. Modal Logic
