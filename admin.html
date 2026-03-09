@@ -339,6 +339,9 @@
                                 class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 진행 상태</th>
                             <th scope="col"
+                                class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                서명 완료</th>
+                            <th scope="col"
                                 class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 관리</th>
                         </tr>
@@ -618,6 +621,13 @@
                         dateStr = `${itemDate.getFullYear()}.${String(itemDate.getMonth() + 1).padStart(2, '0')}.${String(itemDate.getDate()).padStart(2, '0')} ${String(itemDate.getHours()).padStart(2, '0')}:${String(itemDate.getMinutes()).padStart(2, '0')}`;
                     }
 
+                    // 서명 완료일 처리
+                    let signedAtStr = '-';
+                    if (data.signedAt) {
+                        const sDate = data.signedAt.toDate();
+                        signedAtStr = `${String(sDate.getMonth() + 1).padStart(2, '0')}.${String(sDate.getDate()).padStart(2, '0')} ${String(sDate.getHours()).padStart(2, '0')}:${String(sDate.getMinutes()).padStart(2, '0')}`;
+                    }
+
                     // --- 🔍 필터링 로직 시작 ---
                     let isMatch = true;
 
@@ -698,6 +708,9 @@
                             <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${statusColor}">
                                 ${status}
                             </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-mono">
+                            ${signedAtStr}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button onclick="openModal('${id}')" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors font-semibold shadow-sm border border-indigo-100">상세 보기</button>
@@ -1018,6 +1031,19 @@
 
             document.getElementById('detailModal').classList.remove('hidden');
             document.getElementById('modalContent').classList.remove('hidden');
+
+            // 서명 완료일 표시
+            const signedAtEl = document.getElementById('displaySignedAt');
+            if (signedAtEl) {
+                if (data.signedAt) {
+                    const sDate = data.signedAt.toDate();
+                    signedAtEl.innerText = sDate.toLocaleString('ko-KR');
+                    signedAtEl.classList.remove('text-gray-600');
+                    signedAtEl.classList.add('text-indigo-600', 'font-bold');
+                } else {
+                    signedAtEl.innerText = '미서명 (대기 중)';
+                }
+            }
         }
 
         // --- 모달 제어 ---
