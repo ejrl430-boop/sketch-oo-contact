@@ -846,6 +846,10 @@
                             ${data.email ? `<button onclick="copyToClipboard('${data.email}', this)" class="text-xs px-2 py-1 bg-gray-100 border border-gray-200 text-gray-600 rounded hover:bg-gray-200 transition-colors">복사</button>` : ''}
                         </div>
                     </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">유입 경로</p>
+                        <p class="font-medium text-gray-900">${data.referralPath || '미입력'}</p>
+                    </div>
                 </div>
 
                 <div class="border-t border-gray-200 py-5">
