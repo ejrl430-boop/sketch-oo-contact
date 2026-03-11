@@ -428,6 +428,23 @@
                 <div
                     class="w-full md:w-5/12 p-6 overflow-y-auto border-r border-gray-200 bg-gray-50 flex flex-col gap-6">
                     <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-2">고객 정보 (견적서 표기용)</label>
+                        <div class="space-y-3">
+                            <input type="text" id="previewClientName"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+                                placeholder="고객명/회사명" oninput="updateLivePreview()">
+                            <input type="text" id="previewClientProject"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+                                placeholder="프로젝트명" oninput="updateLivePreview()">
+                            <input type="text" id="previewClientPhone"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+                                placeholder="연락처" oninput="updateLivePreview()">
+                            <input type="text" id="previewClientEmail"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-sm"
+                                placeholder="이메일" oninput="updateLivePreview()">
+                        </div>
+                    </div>
+                    <div>
                         <label class="block text-sm font-bold text-gray-800 mb-2">견적 상세 항목 입력</label>
                         <p class="text-xs text-gray-500 mb-3">항목명과 가격(원)을 쉼표(,)로 구분하여 한 줄씩 입력하세요.</p>
                         <textarea id="previewInvoiceItems" rows="6"
@@ -460,6 +477,22 @@
                             <div class="text-[10px] text-gray-500 text-right">
                                 <strong>Date:</strong> 202X.XX.XX<br>
                                 <strong>No:</strong> EST-XXXXXXXX
+                            </div>
+                        </div>
+
+                        <!-- Client Info Preview -->
+                        <div class="mb-5 flex justify-end">
+                            <div class="w-1/2">
+                                <p class="text-[10px] font-bold tracking-widest uppercase mb-2" style="color: #84cc16;">
+                                    Client</p>
+                                <div class="mb-2">
+                                    <strong class="text-sm text-gray-900" id="liveClientName">-</strong> 귀하
+                                </div>
+                                <div class="text-[10px] leading-relaxed text-gray-500">
+                                    <p><strong>프로젝트</strong> <span id="liveClientProject">-</span></p>
+                                    <p><strong>연락처</strong> <span id="liveClientPhone">-</span></p>
+                                    <p><strong>이메일</strong> <span id="liveClientEmail">-</span></p>
+                                </div>
                             </div>
                         </div>
 
@@ -941,10 +974,10 @@
                         </div>
                         <!-- 견적서 / 계약서 바로 보기 -->
                         <div class="md:col-span-3 mt-2 flex gap-3">
-                            <button onclick="openDocPreview('invoice')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 font-semibold text-sm transition-colors">
+                            <button onclick="openDocPreview('${id}', 'invoice')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 font-semibold text-sm transition-colors">
                                 📄 견적서 보기
                             </button>
-                            <button onclick="openDocPreview('contract')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 font-semibold text-sm transition-colors">
+                            <button onclick="openDocPreview('${id}', 'contract')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 font-semibold text-sm transition-colors">
                                 📋 계약서 보기
                             </button>
                         </div>
@@ -993,6 +1026,10 @@
                             <!-- Hidden inputs to store the text data that will be populated by the preview modal -->
                             <input type="hidden" id="editInvoiceItems" value="${data.invoiceItems || ''}">
                             <input type="hidden" id="editContractTerms" value="${data.contractTerms || ''}">
+                            <input type="hidden" id="editInvoiceClientName" value="${data.invoiceClientName || data.name || ''}">
+                            <input type="hidden" id="editInvoiceProject" value="${data.invoiceProject || data.projectType || ''}">
+                            <input type="hidden" id="editInvoicePhone" value="${data.invoicePhone || data.phone || ''}">
+                            <input type="hidden" id="editInvoiceEmail" value="${data.invoiceEmail || data.email || ''}">
 
                             <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-5 flex flex-col md:flex-row items-center justify-between">
                                 <div class="mb-4 md:mb-0">
@@ -1057,6 +1094,10 @@
             // hidden input에서 값을 가져와 모달 텍스트창에 세팅
             document.getElementById('previewInvoiceItems').value = document.getElementById('editInvoiceItems').value;
             document.getElementById('previewContractTerms').value = document.getElementById('editContractTerms').value;
+            document.getElementById('previewClientName').value = document.getElementById('editInvoiceClientName').value;
+            document.getElementById('previewClientProject').value = document.getElementById('editInvoiceProject').value;
+            document.getElementById('previewClientPhone').value = document.getElementById('editInvoicePhone').value;
+            document.getElementById('previewClientEmail').value = document.getElementById('editInvoiceEmail').value;
 
             updateLivePreview();
 
@@ -1073,6 +1114,10 @@
             // 수정된 값을 다시 hidden input으로 저장
             document.getElementById('editInvoiceItems').value = document.getElementById('previewInvoiceItems').value;
             document.getElementById('editContractTerms').value = document.getElementById('previewContractTerms').value;
+            document.getElementById('editInvoiceClientName').value = document.getElementById('previewClientName').value;
+            document.getElementById('editInvoiceProject').value = document.getElementById('previewClientProject').value;
+            document.getElementById('editInvoicePhone').value = document.getElementById('previewClientPhone').value;
+            document.getElementById('editInvoiceEmail').value = document.getElementById('previewClientEmail').value;
 
             closePreviewModal();
         }
@@ -1085,6 +1130,12 @@
             const itemsText = document.getElementById('previewInvoiceItems').value;
             const tbody = document.getElementById('previewTableBody');
             tbody.innerHTML = '';
+
+            // 고객 정보 미리보기 업데이트
+            document.getElementById('liveClientName').innerText = document.getElementById('previewClientName').value || '-';
+            document.getElementById('liveClientProject').innerText = document.getElementById('previewClientProject').value || '-';
+            document.getElementById('liveClientPhone').innerText = document.getElementById('previewClientPhone').value || '-';
+            document.getElementById('liveClientEmail').innerText = document.getElementById('previewClientEmail').value || '-';
 
             let totalSupply = 0;
             const items = itemsText.split('\n');
@@ -1218,9 +1269,18 @@
             const invoiceItems = document.getElementById('editInvoiceItems').value.trim();
             const contractTerms = document.getElementById('editContractTerms').value.trim();
 
+            const invoiceClientName = document.getElementById('editInvoiceClientName') ? document.getElementById('editInvoiceClientName').value.trim() : '';
+            const invoiceProject = document.getElementById('editInvoiceProject') ? document.getElementById('editInvoiceProject').value.trim() : '';
+            const invoicePhone = document.getElementById('editInvoicePhone') ? document.getElementById('editInvoicePhone').value.trim() : '';
+            const invoiceEmail = document.getElementById('editInvoiceEmail') ? document.getElementById('editInvoiceEmail').value.trim() : '';
+
+
             // 저장 버튼 로딩 처리 (간단하게)
-            event.target.innerText = '저장 중...';
-            event.target.classList.add('opacity-75', 'cursor-not-allowed');
+            if (event && event.target && event.target.tagName !== 'INPUT' && event.target.tagName !== 'SELECT' && event.target.tagName !== 'TEXTAREA') {
+                event.target.dataset.originalText = event.target.innerText;
+                event.target.innerText = '저장 중...';
+                event.target.classList.add('opacity-75', 'cursor-not-allowed');
+            }
 
             let updateData = {
                 status: status,
@@ -1232,6 +1292,10 @@
                 finalDraftLink: finalLink,
                 invoiceItems: invoiceItems,
                 contractTerms: contractTerms,
+                invoiceClientName: invoiceClientName,
+                invoiceProject: invoiceProject,
+                invoicePhone: invoicePhone,
+                invoiceEmail: invoiceEmail,
                 lastUpdatedAt: firebase.firestore.FieldValue.serverTimestamp() // 수정 시간 기록
             };
 
@@ -1239,15 +1303,27 @@
                 updateData.scheduleStartDate = startDate;
             }
 
-            db.collection("contacts").doc(id).update(updateData).then(() => {
-                alert("✅ 성공적으로 저장되었습니다!");
-                closeModal();
+            return db.collection("contacts").doc(id).update(updateData).then(() => {
+                if (!window.savingDocPreviewSilent) {
+                    alert("✅ 성공적으로 저장되었습니다!");
+                    closeModal();
+                }
                 loadInquiries(); // 바뀐 상태로 목록 리프레시
+
+                // 복구
+                if (event && event.target && event.target.dataset.originalText) {
+                    event.target.innerText = event.target.dataset.originalText;
+                    event.target.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
             }).catch(error => {
                 console.error("Error updating document: ", error);
                 alert("저장 중 오류가 발생했습니다: " + error.message);
-                event.target.innerText = '변경사항 저장하기';
-                event.target.classList.remove('opacity-75', 'cursor-not-allowed');
+                // 복구
+                if (event && event.target && event.target.dataset.originalText) {
+                    event.target.innerText = event.target.dataset.originalText;
+                    event.target.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
+                throw error;
             });
         }
 
@@ -1335,10 +1411,19 @@
         }
 
         // ── 견적서 / 계약서 바로 열기 ──
-        function openDocPreview(type) {
+        function openDocPreview(id, type) {
             const code = document.getElementById('editAccessCode')?.value.trim();
             if (!code) { alert('접속 코드가 없습니다. 저장 후 다시 시도해주세요.'); return; }
-            window.open(type + '.html?code=' + code, '_blank');
+
+            // 변경사항 자동 저장 (silently) 후 팝업 띄우기
+            window.savingDocPreviewSilent = true;
+            saveInquiry(id).then(() => {
+                window.savingDocPreviewSilent = false;
+                window.open(type + '.html?code=' + code, '_blank');
+            }).catch(err => {
+                window.savingDocPreviewSilent = false;
+                console.error('Failed to auto-save before opening preview', err);
+            });
         }
     </script>
 </body>
