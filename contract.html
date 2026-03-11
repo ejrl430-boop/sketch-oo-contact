@@ -442,15 +442,15 @@
                     document.getElementById('conDate').innerText = dateObj.toLocaleDateString('ko-KR');
                     document.getElementById('conNo').innerText = "CON-" + dateObj.getTime().toString().slice(-8);
 
-                    const name = data.name || '고객';
+                    const name = data.invoiceClientName || data.name || '고객';
                     document.getElementById('clientName').innerText = name;
                     document.getElementById('clientName2').innerText = name;
                     document.getElementById('clientName3').innerText = name;
 
-                    document.getElementById('clientPhone').innerText = data.phone || '-';
-                    document.getElementById('clientEmail').innerText = data.email || '-';
+                    document.getElementById('clientPhone').innerText = data.invoicePhone || data.phone || '-';
+                    document.getElementById('clientEmail').innerText = data.invoiceEmail || data.email || '-';
 
-                    document.getElementById('projectTypeContract').innerText = data.projectType || '웹사이트';
+                    document.getElementById('projectTypeContract').innerText = data.invoiceProject || data.projectType || '웹사이트';
 
                     let amountStr = data.quoteAmount || '0';
                     let supply = parseInt(amountStr.replace(/,/g, ''));
