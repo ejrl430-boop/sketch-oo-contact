@@ -1276,10 +1276,12 @@
 
 
             // 저장 버튼 로딩 처리 (간단하게)
-            if (event && event.target && event.target.tagName !== 'INPUT' && event.target.tagName !== 'SELECT' && event.target.tagName !== 'TEXTAREA') {
-                event.target.dataset.originalText = event.target.innerText;
-                event.target.innerText = '저장 중...';
-                event.target.classList.add('opacity-75', 'cursor-not-allowed');
+            let currentTarget = null;
+            if (typeof event !== 'undefined' && event && event.target && event.target.tagName !== 'INPUT' && event.target.tagName !== 'SELECT' && event.target.tagName !== 'TEXTAREA') {
+                currentTarget = event.target;
+                currentTarget.dataset.originalText = currentTarget.innerText;
+                currentTarget.innerText = '저장 중...';
+                currentTarget.classList.add('opacity-75', 'cursor-not-allowed');
             }
 
             let updateData = {
@@ -1311,17 +1313,17 @@
                 loadInquiries(); // 바뀐 상태로 목록 리프레시
 
                 // 복구
-                if (event && event.target && event.target.dataset.originalText) {
-                    event.target.innerText = event.target.dataset.originalText;
-                    event.target.classList.remove('opacity-75', 'cursor-not-allowed');
+                if (currentTarget && currentTarget.dataset.originalText) {
+                    currentTarget.innerText = currentTarget.dataset.originalText;
+                    currentTarget.classList.remove('opacity-75', 'cursor-not-allowed');
                 }
             }).catch(error => {
                 console.error("Error updating document: ", error);
                 alert("저장 중 오류가 발생했습니다: " + error.message);
                 // 복구
-                if (event && event.target && event.target.dataset.originalText) {
-                    event.target.innerText = event.target.dataset.originalText;
-                    event.target.classList.remove('opacity-75', 'cursor-not-allowed');
+                if (currentTarget && currentTarget.dataset.originalText) {
+                    currentTarget.innerText = currentTarget.dataset.originalText;
+                    currentTarget.classList.remove('opacity-75', 'cursor-not-allowed');
                 }
                 throw error;
             });

@@ -333,10 +333,10 @@
                     document.getElementById('invNo').innerText = "EST-" + dateObj.getTime().toString().slice(-8);
 
                     // 고객 정보
-                    document.getElementById('clientName').innerText = data.name || '고객';
-                    document.getElementById('clientProject').innerText = data.projectType || '-';
-                    document.getElementById('clientPhone').innerText = data.phone || '-';
-                    document.getElementById('clientEmail').innerText = data.email || '-';
+                    document.getElementById('clientName').innerText = data.invoiceClientName || data.name || '고객';
+                    document.getElementById('clientProject').innerText = data.invoiceProject || data.projectType || '-';
+                    document.getElementById('clientPhone').innerText = data.invoicePhone || data.phone || '-';
+                    document.getElementById('clientEmail').innerText = data.invoiceEmail || data.email || '-';
 
                     // === 동적 아이템 테이블 렌더링 ===
                     const tbody = document.querySelector('table tbody');
