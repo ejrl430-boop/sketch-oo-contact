@@ -298,18 +298,18 @@
             transition-delay: 0.3s !important;
         }
 
-        .overlay-menu-list li a {
+        .overlay-menu-list a {
+            font-size: clamp(32px, 5vw, 50px) !important;
+            font-weight: 900 !important;
             color: #fff !important;
             text-decoration: none !important;
-            font-size: clamp(32px, 5vw, 60px) !important;
-            font-weight: 800 !important;
             display: block !important;
-            letter-spacing: -0.02em !important;
-            transition: color 0.3s ease !important;
+            letter-spacing: -1px !important;
+            transition: 0.3s !important;
             text-transform: uppercase !important;
         }
 
-        .overlay-menu-list li a:hover {
+        .overlay-menu-list a:hover {
             color: var(--neon-color) !important;
         }
 
@@ -798,96 +798,146 @@
                 <div class="detail-hero">
                     <img src="${p.visual}" class="detail-hero-img" alt="${p.title} Hero">
                     <div class="detail-hero-content">
-                        <div class="flex flex-wrap gap-3 mb-6">
-                            ${(p.tags || []).map(t => `<span class="pf-badge">${t.toUpperCase()}</span>`).join('')}
-                            <span class="pf-badge-secondary">${p.duration}</span>
-                        </div>
-                        <h1 class="font-mont text-[clamp(40px,7vw,110px)] font-black leading-[0.9] text-white uppercase mb-4" style="letter-spacing:-0.05em;">
-                            ${p.title}
-                        </h1>
-                        <p class="text-2xl md:text-3xl text-[#ccff00] font-light">${p.client}</p>
+                        <p class="font-mont text-neon tracking-widest text-[13px] font-bold mb-6 uppercase">${p.client}</p>
+                        <h1 class="font-pretendard text-[clamp(32px,5vw,64px)] font-black leading-tight mb-6 max-w-[1200px] tracking-tight">${p.title}</h1>
+                        <p class="text-lg text-gray-200 font-light max-w-2xl">${p.desc || ''}</p>
                     </div>
                 </div>
 
-                <!-- Section 1: Overview -->
-                <div class="py-32 px-[5vw] max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
-                    <div class="lg:col-span-5">
-                        <h2 class="font-mont text-3xl font-black mb-8 text-[#ccff00]">PROJECT OVERVIEW</h2>
-                        <p class="text-xl md:text-2xl text-white font-light leading-relaxed mb-12">
-                            ${p.content1}
-                        </p>
-                        <div class="space-y-4 pt-8 border-t border-white/10">
+                <!-- Section 1: Overview & Meta -->
+                <div class="w-full bg-black py-32">
+                    <div class="max-w-[1400px] mx-auto px-[5vw]">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-12 border-t border-b border-[rgba(255,255,255,0.1)] py-12">
                             <div>
-                                <span class="text-gray-500 font-bold mr-4">CLIENT</span>
-                                <span class="text-white">${p.client}</span>
+                                <p class="font-mont text-gray-500 text-[11px] font-black tracking-[3px] mb-3 uppercase">CLIENT</p>
+                                <p class="font-bold text-lg text-white">${p.client}</p>
                             </div>
                             <div>
-                                <span class="text-gray-500 font-bold mr-4">ROLE</span>
-                                <span class="text-white">${p.role}</span>
+                                <p class="font-mont text-gray-500 text-[11px] font-black tracking-[3px] mb-3 uppercase">DURATION</p>
+                                <p class="font-bold text-lg text-white">${p.duration}</p>
                             </div>
                             <div>
-                                <span class="text-gray-500 font-bold mr-4">DURATION</span>
-                                <span class="text-white">${p.duration}</span>
+                                <p class="font-mont text-gray-500 text-[11px] font-black tracking-[3px] mb-3 uppercase">ROLE</p>
+                                <p class="font-bold text-lg text-white">${p.role}</p>
+                            </div>
+                            <div>
+                                <p class="font-mont text-gray-500 text-[11px] font-black tracking-[3px] mb-3 uppercase">CATEGORY</p>
+                                <p class="font-bold text-sm text-neon uppercase tracking-wider">${(p.tags || []).join(' / ')}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-24 max-w-4xl">
+                            <p class="font-mont text-neon tracking-[2px] text-[11px] font-bold mb-4 uppercase">PROJECT STORY</p>
+                            <h2 class="font-pretendard text-4xl lg:text-5xl font-black mb-10 leading-[1.3] tracking-tight">
+                                Strategic UX/UI Design<br><span class="text-neon">That Achieves Business Goals</span>
+                            </h2>
+                            <p class="text-gray-400 text-xl leading-[1.8] font-light">
+                                ${p.content1 || p.desc || ''}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Detail Page 1 -->
+                ${p.img1 ? `
+                <div class="py-16 bg-[rgba(255,255,255,0.02)]">
+                    <div class="max-w-[1280px] mx-auto px-[5vw]">
+                        <div class="rounded-[24px] overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.06)]">
+                            <img src="${p.img1}" class="w-full h-auto block" alt="${p.title} Detail 1" loading="lazy">
+                        </div>
+                    </div>
+                </div>` : ''}
+
+                <!-- Section 3: Detail Page 2 -->
+                ${p.img2 && p.img2 !== p.img1 ? `
+                <div class="py-16">
+                    <div class="max-w-[1280px] mx-auto px-[5vw]">
+                        <div class="rounded-[24px] overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.06)]">
+                            <img src="${p.img2}" class="w-full h-auto block" alt="${p.title} Detail 2" loading="lazy">
+                        </div>
+                    </div>
+                </div>` : ''}
+
+                <!-- Section 4: Mockup + Hero -->
+                <div class="py-16 bg-[rgba(255,255,255,0.02)]">
+                    <div class="max-w-[1280px] mx-auto px-[5vw]">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                            <div class="rounded-[20px] overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.06)]">
+                                <img src="${p.thumb}" class="w-full h-auto block" alt="${p.title} Mockup" loading="lazy">
+                            </div>
+                            <div class="rounded-[20px] overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.06)]">
+                                <img src="${p.visual}" class="w-full h-auto block" alt="${p.title} Hero" loading="lazy">
                             </div>
                         </div>
                     </div>
-                    <div class="lg:col-span-7">
-                        <div class="rounded-3xl overflow-hidden border border-white/10">
-                            <img src="${p.img1}" class="w-full" alt="Feature 1">
-                        </div>
-                        <div class="mt-8 rounded-3xl overflow-hidden border border-white/10">
-                            <img src="${p.img2}" class="w-full" alt="Feature 2">
-                        </div>
-                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="py-24 text-center border-t border-[rgba(255,255,255,0.05)]">
+                    <button class="font-mont text-neon text-sm font-bold tracking-[4px] hover:text-white transition-colors uppercase" onclick="showList()">← BACK TO LIST</button>
                 </div>
             `;
 
-            gsap.to('#list-view', { opacity: 0, display: 'none', duration: 0.4 });
-            gsap.to('#detail-view', {
-                opacity: 1, display: 'block', duration: 0.4, onComplete: () => {
-                    window.scrollTo(0, 0);
-                    attachCursorEvents();
-                }
-            });
+            // Scroll to top quickly
+            gsap.to(window, { scrollTo: 0, duration: 0.1 });
+
+            // Swap Views
+            document.getElementById('list-view').style.display = 'none';
+            document.getElementById('detail-view').style.display = 'block';
+
+            // Attach cursor to back button
+            attachCursorEvents();
+
+            // Reveal Anim
+            gsap.fromTo('#detail-view',
+                { opacity: 0, y: 50 },
+                { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
+            );
+            
+            // 🚀 높이 재계산 트리거 (내용 변경 시)
+            if(window.sendHeight) window.sendHeight();
         }
 
+        // Show List
         function showList() {
-            gsap.to('#detail-view', { opacity: 0, display: 'none', duration: 0.4 });
-            gsap.to('#list-view', {
-                opacity: 1, display: 'block', duration: 0.4, onComplete: () => {
-                    attachCursorEvents();
+            gsap.to('#detail-view', {
+                opacity: 0,
+                y: 50,
+                duration: 0.4,
+                onComplete: () => {
+                    document.getElementById('detail-view').style.display = 'none';
+                    document.getElementById('list-view').style.display = 'block';
+
+                    gsap.to(window, { scrollTo: 0, duration: 0.1 });
+                    renderList(document.querySelector('.pf-tab.active').dataset.filter);
                 }
             });
         }
 
         // Init
-        fetchPortfolios();
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchPortfolios();
+        });
 
         // 🚀 Iframe 자동 높이 조절을 위한 통신 스크립트 추가
+        function sendHeight() {
+            const height = Math.max(
+                document.body.scrollHeight, 
+                document.documentElement.scrollHeight,
+                document.body.offsetHeight, 
+                document.documentElement.offsetHeight
+            );
+            window.parent.postMessage({ type: 'resize', height: height }, '*');
+        }
+        
+        window.sendHeight = sendHeight;
+
         window.addEventListener('load', function() {
-            function sendHeight() {
-                // 더 정확한 높이 계산을 위해 다양한 속성 중 최대값을 선택합니다.
-                const height = Math.max(
-                    document.body.scrollHeight, 
-                    document.documentElement.scrollHeight,
-                    document.body.offsetHeight, 
-                    document.documentElement.offsetHeight
-                );
-                window.parent.postMessage({ type: 'resize', height: height }, '*');
-            }
-            
-            // 페이지 로드 시 전송
             sendHeight();
-            
-            // 이미지 로딩이나 애니메이션 대기 후 몇 번 더 전송 (안전 장치)
             setTimeout(sendHeight, 500);
             setTimeout(sendHeight, 1500);
             setTimeout(sendHeight, 3000);
-            
-            // 창 크기 조절 시 다시 전송
             window.addEventListener('resize', sendHeight);
-            
-            // 데이터 로딩 등으로 내용이 바뀔 때 자동 감지
             const observer = new MutationObserver(sendHeight);
             observer.observe(document.body, { childList: true, subtree: true });
         });
