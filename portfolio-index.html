@@ -594,9 +594,9 @@
     <div id="so-overlay-menu">
         <div class="overlay-bg-text font-pretendard">MENU</div>
         <ul class="overlay-menu-list">
-            <li><a href="/portfolio" class="font-pretendard hover-target">PORTFOLIO</a></li>
+            <li><a href="https://sketchoo.kr/portfolio" class="font-pretendard hover-target">PORTFOLIO</a></li>
             <li><a href="https://sketchoo.kr/column" class="font-pretendard hover-target">COLUMN</a></li>
-            <li><a href="/" class="font-pretendard hover-target">CONTACT</a></li>
+            <li><a href="https://sketchoo.kr/contact" class="font-pretendard hover-target">CONTACT</a></li>
         </ul>
     </div>
 
@@ -863,6 +863,23 @@
         // Init
         fetchPortfolios();
 
+        // 🚀 Iframe 자동 높이 조절을 위한 통신 스크립트 추가
+        window.addEventListener('load', function() {
+            function sendHeight() {
+                const height = document.documentElement.scrollHeight || document.body.scrollHeight;
+                window.parent.postMessage({ type: 'resize', height: height }, '*');
+            }
+            
+            // 페이지 로드 시 전송
+            sendHeight();
+            
+            // 창 크기 조절 시 다시 전송
+            window.addEventListener('resize', sendHeight);
+            
+            // 데이터 로딩 등으로 내용이 바뀔 때 자동 감지
+            const observer = new MutationObserver(sendHeight);
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
     </script>
 </body>
 
