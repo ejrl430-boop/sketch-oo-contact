@@ -728,6 +728,18 @@
                 btn.textContent = "데이터 초기화 및 업로드 실행";
             }
         }
+
+        // 🚀 Iframe 자동 높이 조절을 위한 통신 스크립트 추가
+        window.addEventListener('load', function() {
+            function sendHeight() {
+                const height = document.documentElement.scrollHeight || document.body.scrollHeight;
+                window.parent.postMessage({ type: 'resize', height: height }, '*');
+            }
+            sendHeight();
+            window.addEventListener('resize', sendHeight);
+            const observer = new MutationObserver(sendHeight);
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
     </script>
 </body>
 
