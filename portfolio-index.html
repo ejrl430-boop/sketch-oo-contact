@@ -431,18 +431,11 @@
             height: 100%;
             object-fit: cover;
             object-position: top;
-            filter: grayscale(100%);
-            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease;
-        }
-
-        /* Detail View Images - No Grayscale */
-        #detail-view img {
-            filter: grayscale(0%) !important;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .pf-card:hover .pf-img {
             transform: scale(1.05);
-            filter: grayscale(0%);
         }
 
         .pf-overlay {
@@ -878,10 +871,8 @@
                 </div>
             `;
 
-            // 🚀 브라우저 히스토리에 상태 추가 (뒤로가기 지원)
-            if (!window.history.state || window.history.state.page !== 'detail') {
-                history.pushState({ page: 'detail', id: id }, null, "");
-            }
+            // 🚀 해시 기반 히스토리 관리 (뒤로가기 지원)
+            location.hash = `detail-${id}`;
 
             // Scroll to top quickly
             gsap.to(window, { scrollTo: 0, duration: 0.1 });
@@ -904,13 +895,11 @@
         }
 
         // Show List
-        function showList(isPopState = false) {
-            // 히스토리 관리 (뒤로가기 버튼이 아닐 때만 목록 상태로 변경)
-            if (!isPopState) {
-                if (window.history.state && window.history.state.page === 'detail') {
-                    history.back(); // 뒤로가기 실행 (popstate가 showList(true)를 호출하게 됨)
-                    return;
-                }
+        function showList(isHashChange = false) {
+            // 히스토리 관리: 직접 목록 버튼을 눌렀을 때만 해시 제거
+            if (!isHashChange && location.hash.includes('detail-')) {
+                location.hash = ''; 
+                return;
             }
 
             gsap.to('#detail-view', {
@@ -927,18 +916,33 @@
             });
         }
 
-        // 🚀 뒤로가기 버튼 감지 로직 추가
-        window.onpopstate = function(event) {
-            if (event.state && event.state.page === 'detail') {
-                showDetail(event.state.id);
+        // 🚀 해시 변경(뒤로가기/앞으로가기) 감지 로직
+        window.addEventListener('hashchange', function() {
+            const hash = location.hash;
+            if (hash.startsWith('#detail-')) {
+                const id = hash.replace('#detail-', '');
+                // 현재 상세뷰가 아니거나 다른 아이디일 때만 실행
+                if (document.getElementById('detail-view').style.display !== 'block') {
+                    showDetail(id);
+                }
             } else {
-                showList(true); // 실제 뒤로가기 발생 시 목록으로
+                // 해시가 없으면 목록으로
+                if (document.getElementById('list-view').style.display !== 'block') {
+                    showList(true);
+                }
             }
-        };
+        });
 
         // Init
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchPortfolios();
+        window.addEventListener('DOMContentLoaded', async () => {
+            await fetchPortfolios();
+            
+            // 🚀 초기 로드 시 해시가 있으면 해당 상세페이지로 바로 이동 (딥링크 지원)
+            const hash = location.hash;
+            if (hash.startsWith('#detail-')) {
+                const id = hash.replace('#detail-', '');
+                showDetail(id);
+            }
         });
 
         // 🚀 Iframe 자동 높이 조절을 위한 통신 스크립트 추가
