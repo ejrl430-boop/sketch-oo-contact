@@ -298,18 +298,18 @@
             transition-delay: 0.3s !important;
         }
 
-        .overlay-menu-list a {
-            font-size: clamp(32px, 5vw, 50px) !important;
-            font-weight: 900 !important;
+        .overlay-menu-list li a {
             color: #fff !important;
             text-decoration: none !important;
+            font-size: clamp(32px, 5vw, 60px) !important;
+            font-weight: 800 !important;
             display: block !important;
-            letter-spacing: -1px !important;
-            transition: 0.3s !important;
+            letter-spacing: -0.02em !important;
+            transition: color 0.3s ease !important;
             text-transform: uppercase !important;
         }
 
-        .overlay-menu-list a:hover {
+        .overlay-menu-list li a:hover {
             color: var(--neon-color) !important;
         }
 
@@ -866,12 +866,23 @@
         // 🚀 Iframe 자동 높이 조절을 위한 통신 스크립트 추가
         window.addEventListener('load', function() {
             function sendHeight() {
-                const height = document.documentElement.scrollHeight || document.body.scrollHeight;
+                // 더 정확한 높이 계산을 위해 다양한 속성 중 최대값을 선택합니다.
+                const height = Math.max(
+                    document.body.scrollHeight, 
+                    document.documentElement.scrollHeight,
+                    document.body.offsetHeight, 
+                    document.documentElement.offsetHeight
+                );
                 window.parent.postMessage({ type: 'resize', height: height }, '*');
             }
             
             // 페이지 로드 시 전송
             sendHeight();
+            
+            // 이미지 로딩이나 애니메이션 대기 후 몇 번 더 전송 (안전 장치)
+            setTimeout(sendHeight, 500);
+            setTimeout(sendHeight, 1500);
+            setTimeout(sendHeight, 3000);
             
             // 창 크기 조절 시 다시 전송
             window.addEventListener('resize', sendHeight);
