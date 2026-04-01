@@ -1,5 +1,7 @@
 {
   "rewrites": [
-    { "source": "/admin1234", "destination": "/admin.html" }
+    { "source": "/admin1234", "destination": "/admin.html" },
+    { "source": "/portfolio", "destination": "/portfolio-index.html" },
+    { "source": "/portfolio-admin", "destination": "/portfolio-admin.html" }
   ]
 }

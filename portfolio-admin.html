@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드 - 포트폴리오 관리</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        /* Forms / Cards */
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 24px;
+        }
+
+        /* Checkbox list */
+        .tag-list label {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .tag-list input {
+            accent-color: #6366f1;
+            margin-right: 6px;
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body class="text-gray-800 antialiased p-6 md:p-12">
+
+    <!-- 🔒 관리자 로그인 오버레이 -->
+    <div id="adminLoginOverlay" class="fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">포트폴리오 관리자 인증</h2>
+            <p class="text-gray-500 mb-8 text-sm">대시보드 접속을 위해 비밀번호를 입력하세요.</p>
+            <input type="password" id="adminPasswordInput" placeholder="비밀번호 입력"
+                class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-center text-lg focus:border-indigo-500 focus:outline-none mb-4 transition-colors">
+            <button onclick="checkAdminLogin()"
+                class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-700 transition-all">로그인</button>
+            <p id="adminLoginError" class="text-red-500 text-xs mt-4 font-medium hidden">비밀번호가 일치하지 않습니다.</p>
+        </div>
+    </div>
+
+    <!-- 내용 -->
+    <div id="adminContent" class="max-w-6xl mx-auto hidden">
+        <div class="flex justify-between items-end mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">포트폴리오 관리</h1>
+                <p class="text-gray-500 mt-2">새로운 작성 및 삭제가 가능합니다.</p>
+            </div>
+            <div>
+                <a href="/admin1234" class="text-sm font-semibold text-indigo-600 hover:underline">← 문의 관리 대시보드
+                    가기</a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Form Area (Left) -->
+            <div class="lg:col-span-1">
+                <div class="card">
+                    <h2 class="text-lg font-bold mb-4 border-b pb-2">새 포트폴리오 등록</h2>
+
+                    <form id="portfolioForm" onsubmit="submitForm(event)">
+                        <div class="space-y-4">
+                            <!-- Title -->
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">프로젝트명 (Title) <span
+                                        class="text-red-500">*</span></label>
+                                <input type="text" id="p_title" required
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="ex) IMPEX GLS 홈페이지 리뉴얼">
+                            </div>
+
+                            <!-- Client -->
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">고객/브랜드명 (Client)</label>
+                                <input type="text" id="p_client"
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="ex) IMPEX GLS">
+                            </div>
+
+                            <!-- Desc / Role / Duration -->
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">수행 내역 요약 (Role/Desc)</label>
+                                <input type="text" id="p_role"
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="ex) UI/UX 리뉴얼 및 1,700개 상품군 SEO 최적화">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">상세 설명 한 줄 (Content)</label>
+                                <textarea id="p_content1" rows="2"
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="상세 링크 클릭 시 보이는 설명문"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-semibold mb-1">제작 기간 (Duration)</label>
+                                    <input type="text" id="p_duration"
+                                        class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        placeholder="ex) 1~3개월">
+                                </div>
+                            </div>
+
+                            <!-- Tags Checkbox -->
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">카테고리 태그 (Tags)</label>
+                                <div class="tag-list bg-gray-50 border rounded-lg p-3">
+                                    <label><input type="checkbox" value="b2b" class="tag-check"> B2B SOLUTION</label>
+                                    <label><input type="checkbox" value="b2c" class="tag-check"> B2C & COMMERCE</label>
+                                    <label><input type="checkbox" value="renewal" class="tag-check"> RENEWAL</label>
+                                </div>
+                            </div>
+
+                            <!-- Thumbnails & Visuals -->
+                            <hr class="my-4">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">썸네일 이미지 주소 (Thumbnail) <span
+                                        class="text-xs text-gray-500 font-normal ml-2">가장 권장하는 비율은 4:3 입니다.</span> <span
+                                        class="text-red-500">*</span></label>
+                                <input type="url" id="p_thumb" required
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="https://...">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">대표 배너 이미지 주소 (Visual Hero) <span
+                                        class="text-xs text-gray-500 font-normal ml-2">가로로 긴 PC 해상도용 이미지</span></label>
+                                <input type="url" id="p_visual"
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="https://...">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">상세 이미지 1 주소</label>
+                                <input type="url" id="p_img1"
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="https://...">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">상세 이미지 2 주소</label>
+                                <input type="url" id="p_img2"
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="https://...">
+                            </div>
+
+                            <button type="submit" id="submitBtn"
+                                class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-700 transition-all mt-4">새
+                                포트폴리오 등록하기</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- List Area (Right) -->
+            <div class="lg:col-span-2">
+                <div class="card overflow-hidden">
+                    <h2 class="text-lg font-bold mb-4 border-b pb-2">등록된 포트폴리오 <span id="listCount"
+                            class="text-indigo-600 ml-2">0</span></h2>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        포트폴리오 정보</th>
+                                    <th
+                                        class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        태그</th>
+                                    <th
+                                        class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        괸리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="portfolioList" class="bg-white divide-y divide-gray-200">
+                                <!-- JS Injected Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🚀 자동 데이터 세팅 (AI 추천) -->
+        <div class="card mt-8 border-indigo-200 bg-indigo-50/30">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-indigo-900">데이터베이스 초기화 및 자동 업로드</h2>
+                    <p class="text-sm text-indigo-700 mt-1">기존의 구버전 데이터를 모두 삭제하고, 승인된 7개의 새로운 포트폴리오를 등록합니다.</p>
+                </div>
+                <button onclick="resetAndSeedData()" id="seedBtn"
+                    class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center gap-2">
+                    <span>데이터 초기화 및 업로드 실행</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✏️ 수정 모달 (Edit Modal) -->
+    <div id="editModal" class="fixed inset-0 bg-black/50 z-[110] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">포트폴리오 수정</h2>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="editForm" onsubmit="updatePortfolio(event)">
+                <input type="hidden" id="edit_id">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">프로젝트명</label>
+                            <input type="text" id="edit_title" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">고객/브랜드명</label>
+                            <input type="text" id="edit_client" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">수행 내역 요약</label>
+                        <input type="text" id="edit_role" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">상세 설명 한 줄</label>
+                        <textarea id="edit_content1" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">제작 기간</label>
+                            <input type="text" id="edit_duration" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">카테고리 태그</label>
+                            <div class="flex gap-2 mt-1">
+                                <label class="inline-flex items-center text-xs"><input type="checkbox" value="b2b" class="edit-tag-check mr-1"> B2B</label>
+                                <label class="inline-flex items-center text-xs"><input type="checkbox" value="b2c" class="edit-tag-check mr-1"> B2C</label>
+                                <label class="inline-flex items-center text-xs"><input type="checkbox" value="renewal" class="edit-tag-check mr-1"> RENEWAL</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">썸네일 URL</label>
+                            <input type="url" id="edit_thumb" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">대표 배너 URL</label>
+                            <input type="url" id="edit_visual" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">상세 이미지 1 URL</label>
+                            <input type="url" id="edit_img1" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">상세 이미지 2 URL</label>
+                            <input type="url" id="edit_img2" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+                    <div class="flex gap-3 mt-6">
+                        <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-all">취소</button>
+                        <button type="submit" id="updateBtn" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-all">변경사항 저장</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 1. Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJeGRV5CnRoRwqoQ1igrjhHCJHCMow3L4",
+            authDomain: "sketchoo-2c343.firebaseapp.com",
+            projectId: "sketchoo-2c343",
+            storageBucket: "sketchoo-2c343.firebasestorage.app",
+            messagingSenderId: "1072809023897",
+            appId: "1:1072809023897:web:edc12722ad0d03b4a45b08"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 🛡️ 로그인 로직
+        const ADMIN_PASS = "admin1234";
+
+        function checkAdminLogin() {
+            const input = document.getElementById('adminPasswordInput').value;
+            if (input === ADMIN_PASS) {
+                sessionStorage.setItem('admin_auth_pf', 'true');
+                document.getElementById('adminLoginOverlay').classList.add('hidden');
+                document.getElementById('adminContent').classList.remove('hidden');
+                loadList();
+            } else {
+                document.getElementById('adminLoginError').classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('adminPasswordInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAdminLogin();
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('admin_auth_pf') === 'true') {
+                document.getElementById('adminLoginOverlay').classList.add('hidden');
+                document.getElementById('adminContent').classList.remove('hidden');
+                loadList();
+            }
+        });
+
+        // 📝 폼 제출
+        async function submitForm(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = "저장 중...";
+
+            const selectedTags = Array.from(document.querySelectorAll('.tag-check:checked')).map(cb => cb.value);
+
+            // DB에 저장할 데이터 구성
+            const data = {
+                title: document.getElementById('p_title').value,
+                client: document.getElementById('p_client').value,
+                role: document.getElementById('p_role').value,
+                content1: document.getElementById('p_content1').value,
+                desc: document.getElementById('p_role').value, // desc = role 로 통일
+                duration: document.getElementById('p_duration').value,
+                thumb: document.getElementById('p_thumb').value,
+                visual: document.getElementById('p_visual').value,
+                img1: document.getElementById('p_img1').value,
+                img2: document.getElementById('p_img2').value,
+                tags: selectedTags,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                await db.collection("portfolios").add(data);
+
+                alert("성공적으로 등록되었습니다!");
+                document.getElementById('portfolioForm').reset();
+                loadList();
+
+            } catch (error) {
+                console.error(error);
+                alert("등록 중 오류가 발생했습니다: " + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "새 포트폴리오 등록하기";
+            }
+        }
+
+        // 📊 리스트 불러오기
+        async function loadList() {
+            const listEl = document.getElementById('portfolioList');
+            const cntEl = document.getElementById('listCount');
+            listEl.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-gray-500">불러오는 중...</td></tr>`;
+
+            try {
+                const snapshot = await db.collection("portfolios").orderBy("createdAt", "desc").get();
+                cntEl.textContent = snapshot.docs.length;
+                listEl.innerHTML = '';
+
+                if (snapshot.empty) {
+                    listEl.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-gray-500">등록된 항목이 없습니다.</td></tr>`;
+                    return;
+                }
+
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    const tr = document.createElement('tr');
+
+                    tr.innerHTML = `
+                        <td class="px-4 py-4">
+                            <div class="flex items-center gap-4">
+                                ${data.thumb ? `<img src="${data.thumb}" class="w-16 h-12 object-cover rounded-md border">` : '<div class="w-16 h-12 bg-gray-200 rounded-md border"></div>'}
+                                <div>
+                                    <p class="font-bold text-gray-900">${data.title}</p>
+                                    <p class="text-[10px] text-indigo-500 font-mono mt-0.5 break-all">${data.thumb || 'No Path'}</p>
+                                    <p class="text-xs text-gray-500 mt-1">${data.client || '-'} | ${data.role || '-'}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-4">
+                            <div class="flex flex-wrap gap-1">
+                                ${(data.tags || []).map(t => `<span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-1 rounded border border-indigo-100 uppercase">${t}</span>`).join('')}
+                            </div>
+                        </td>
+                        <td class="px-4 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <button onclick="openEditModal('${doc.id}')" class="text-indigo-600 hover:text-white hover:bg-indigo-600 border border-indigo-600 px-3 py-1 rounded-md text-sm font-semibold transition-colors">수정</button>
+                                <button onclick="deleteItem('${doc.id}')" class="text-red-500 hover:text-white hover:bg-red-500 border border-red-500 px-3 py-1 rounded-md text-sm font-semibold transition-colors">삭제</button>
+                            </div>
+                        </td>
+                    `;
+                    listEl.appendChild(tr);
+                });
+            } catch (e) {
+                listEl.innerHTML = `<tr><td colspan="3" class="text-center py-8 text-red-500">데이터를 불러오지 못했습니다.</td></tr>`;
+            }
+        }
+
+        // 🗑️ 삭제 로직
+        async function deleteItem(id) {
+            if (!confirm("정말 이 포트폴리오를 삭제하시겠습니까?")) return;
+            try {
+                await db.collection("portfolios").doc(id).delete();
+                loadList();
+            } catch (e) {
+                alert("삭제 중 오류가 발생했습니다.");
+            }
+        }
+
+        // ✏️ 수정 모달 열기
+        async function openEditModal(id) {
+            try {
+                const doc = await db.collection("portfolios").doc(id).get();
+                if (!doc.exists) return;
+                const data = doc.data();
+
+                document.getElementById('edit_id').value = id;
+                document.getElementById('edit_title').value = data.title || '';
+                document.getElementById('edit_client').value = data.client || '';
+                document.getElementById('edit_role').value = data.role || '';
+                document.getElementById('edit_content1').value = data.content1 || '';
+                document.getElementById('edit_duration').value = data.duration || '';
+                document.getElementById('edit_thumb').value = data.thumb || '';
+                document.getElementById('edit_visual').value = data.visual || '';
+                document.getElementById('edit_img1').value = data.img1 || '';
+                document.getElementById('edit_img2').value = data.img2 || '';
+
+                // 태그 체크
+                const tags = data.tags || [];
+                document.querySelectorAll('.edit-tag-check').forEach(cb => {
+                    cb.checked = tags.includes(cb.value);
+                });
+
+                document.getElementById('editModal').classList.remove('hidden');
+            } catch (e) {
+                alert("데이터를 가져오는 중 오류가 발생했습니다.");
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        // ✏️ 수정 업데이트 저장
+        async function updatePortfolio(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit_id').value;
+            const btn = document.getElementById('updateBtn');
+            btn.disabled = true;
+            btn.textContent = "저장 중...";
+
+            const selectedTags = Array.from(document.querySelectorAll('.edit-tag-check:checked')).map(cb => cb.value);
+
+            const data = {
+                title: document.getElementById('edit_title').value,
+                client: document.getElementById('edit_client').value,
+                role: document.getElementById('edit_role').value,
+                content1: document.getElementById('edit_content1').value,
+                desc: document.getElementById('edit_role').value,
+                duration: document.getElementById('edit_duration').value,
+                thumb: document.getElementById('edit_thumb').value,
+                visual: document.getElementById('edit_visual').value,
+                img1: document.getElementById('edit_img1').value,
+                img2: document.getElementById('edit_img2').value,
+                tags: selectedTags,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                await db.collection("portfolios").doc(id).update(data);
+                alert("성공적으로 수정되었습니다!");
+                closeEditModal();
+                loadList();
+            } catch (e) {
+                alert("수정 중 오류가 발생했습니다: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "변경사항 저장";
+            }
+        }
+
+        // 🚀 승인된 데이터 시딩 로직 (기존 데이터 삭제 후 진행)
+        async function resetAndSeedData() {
+            const btn = document.getElementById('seedBtn');
+            if (!confirm("주의: 기존의 모든 포트폴리오 데이터를 삭제하고 승인된 7개 데이터로 초기화하시겠습니까? (이 작업은 되돌릴 수 없습니다)")) return;
+
+            btn.disabled = true;
+            btn.textContent = "작업 중...";
+
+            try {
+                // 1. 기존 데이터 모두 삭제
+                const snapshot = await db.collection("portfolios").get();
+                const deleteBatch = db.batch();
+                snapshot.docs.forEach(doc => deleteBatch.delete(doc.ref));
+                await deleteBatch.commit();
+                console.log("Old data cleared.");
+
+                // 2. 새로운 데이터 업로드 (10대 업종 반영 - 고퀄리티 레이아웃)
+                const approvedData = [
+                    {
+                        title: "[물류] IMPEX GLS 글로벌 통합 물류 솔루션",
+                        client: "IMPEX GLS",
+                        role: "글로벌 공급망 관리 시스템 UI/UX 고도화 및 반응형 최적화",
+                        desc: "글로벌 물류의 새로운 기준을 제시하는 강력한 트러스트 이미지 및 반응형 정보 최적화",
+                        content1: "섹션별 직관적인 데이터 시각화와 실시간 트래킹 인터페이스를 통해 복잡한 물류 프로세스를 단순화했습니다.",
+                        duration: "2개월",
+                        tags: ["b2b", "renewal"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_logistics_laptop_v3_1773639360728.png",
+                        visual: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_logistics_hero_v4_1773663343520.png",
+                        img1: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_logistics_hero_v4_1773663343520.png",
+                        img2: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_logistics_laptop_v3_1773639360728.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "[법무] 법무법인 정도 - 프리미엄 디지털 리걸 그룹",
+                        client: "법무법인 정도",
+                        role: "브랜드 아이덴티티 수립 및 하이엔드 웹 구축",
+                        desc: "법적 권위와 의뢰인의 신뢰를 잇는 고감도 디지털 아이덴티티 설계",
+                        content1: "무게감 있는 톤앤매너와 전문성이 느껴지는 타이포그래피를 통해 법무법인의 신뢰도를 극대화했습니다.",
+                        duration: "3개월",
+                        tags: ["b2b"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_law_laptop_v4_1773663359973.png",
+                        visual: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_law_hero_v4_1773663376351.png",
+                        img1: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_law_hero_v4_1773663376351.png",
+                        img2: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_law_laptop_v4_1773663359973.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "[회계] 정석회계법인 - 스마트 파이낸셜 오피스",
+                        client: "정석회계법인",
+                        role: "비즈니스 솔루션 UX 설계 및 데이터 시각화",
+                        desc: "데이터의 투명성과 전문성을 강조한 현대적인 회계 비즈니스 플랫폼",
+                        content1: "복잡한 재무 지표를 한눈에 파악할 수 있는 인포그래픽 중심의 레이아웃을 통해 고객 경험을 개선했습니다.",
+                        duration: "2개월",
+                        tags: ["b2b"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_accounting_laptop_v4_1773663396190.png",
+                        visual: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_accounting_hero_v4_1773663411108.png",
+                        img1: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_accounting_hero_v4_1773663411108.png",
+                        img2: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_accounting_laptop_v4_1773663396190.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "[결혼] 인연 노블 매니지먼트 - 하이엔드 매칭 플랫폼",
+                        client: "인연 노블",
+                        role: "럭셔리 브랜딩 및 멤버십 전용 UI 구현",
+                        desc: "상위 1% 노블리 매칭 브랜드에 어울리는 우아하고 세련된 비주얼 스토리텔링",
+                        content1: "감성적인 무드와 체계적인 멤버십 관리 시스템을 결합하여 품격 있는 매칭 경험을 제공합니다.",
+                        duration: "4개월",
+                        tags: ["b2c"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_marriage_laptop_v4_1773663427678.png",
+                        visual: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_marriage_hero_v4_1773663443361.png",
+                        img1: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_marriage_hero_v4_1773663443361.png",
+                        img2: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_marriage_laptop_v4_1773663427678.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "[여행] 머무름 - 프리미엄 커스텀 투어 서비스",
+                        client: "머무름 여행사",
+                        role: "여행 큐레이션 플랫폼 UI/UX 리뉴얼",
+                        desc: "일상을 벗어난 특별한 경험을 제안하는 감각적인 여행 브랜딩",
+                        content1: "고해상도 비주얼 중심의 레이아웃으로 현장의 감동을 전달하고 직관적인 예약 플로우를 구축했습니다.",
+                        duration: "2.5개월",
+                        tags: ["b2c", "renewal"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_travel_laptop_v4_1773663457161.png",
+                        visual: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_travel_hero_v4_1773663471381.png",
+                        img1: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_travel_hero_v4_1773663471381.png",
+                        img2: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_travel_laptop_v4_1773663457161.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "차란차 (Charrancha) 럭셔리 오토 플랫폼",
+                        client: "CHARRANCHA",
+                        role: "프리미엄 중고차 거래 플랫폼 다크모드 디자인 시스템",
+                        desc: "하이엔드 자동차 거래의 품격에 맞는 고감도 인터페이스 디인",
+                        content1: "다크모드 기반의 압도적인 비주얼과 매끄러운 차량 탐색 경험을 통해 브랜드 가치를 제고했습니다.",
+                        duration: "3개월",
+                        tags: ["b2c", "renewal"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_car_laptop_v4_1773663487248.png",
+                        visual: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_car_hero_v4_1773663500152.png",
+                        img1: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_car_hero_v4_1773663500152.png",
+                        img2: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_car_laptop_v4_1773663487248.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "오션 뷰 풀빌라 (Ocean View Villa) 브랜딩",
+                        client: "OCEAN VIEW VILLA",
+                        role: "고급 휴양 시설 렌딩페이지 및 비주얼 아이덴티티",
+                        desc: "건축적 미학을 담아낸 미니멀한 레이아웃과 감성적인 비주얼 스토리텔링",
+                        content1: "공간의 미학을 웹으로 옮겨와, 방문 전부터 프리미엄한 공간 경험을 제공하도록 설계했습니다.",
+                        duration: "1개월",
+                        tags: ["b2c"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_pension_laptop_v4_1773663515754.png",
+                        visual: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_pension_hero_v4_1773663532059.png",
+                        img1: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_pension_hero_v4_1773663532059.png",
+                        img2: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_pension_laptop_v4_1773663515754.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "넥스트 제너레이션 AI SaaS 플랫폼",
+                        client: "NEXT GEN AI",
+                        role: "인공지능 기반 데이터 분석 대시보드 및 서비스 운영",
+                        desc: "복잡한 AI 데이터를 직관적인 그래프로 시각화한 차세대 SaaS",
+                        content1: "기술의 진보성을 강조하는 역동적인 UI와 고효율 데이터 처리 엔진의 특성을 레이아웃에 반영했습니다.",
+                        duration: "4개월",
+                        tags: ["b2b"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_ai_saas_laptop_v4_1773663548967.png",
+                        visual: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_ai_saas_hero_v4_1773663564873.png",
+                        img1: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_ai_saas_hero_v4_1773663564873.png",
+                        img2: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_ai_saas_laptop_v4_1773663548967.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "프리미엄 메디컬 클리닉 브랜드 리뉴얼",
+                        client: "MEDI GLOW",
+                        role: "신뢰도 중심의 의료 서비스 브랜딩 및 예약 시스템",
+                        desc: "전문성과 정결함이 느껴지는 톤앤매너로 고객 신뢰도를 극대화",
+                        content1: "메디컬 전문 가이드라인을 준수하면서도 트렌디한 감각을 잃지 않는 균형 잡힌 디자인을 추구했습니다.",
+                        duration: "1.5개월",
+                        tags: ["b2c", "renewal"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/korean_medical_laptop_v4_1773663581649.png",
+                        visual: "images/medical_split_view_1773586098626.png",
+                        img1: "images/medical_long_landing_1773586117344.png",
+                        img2: "images/medical_long_landing_1773586117344.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "하이엔드 디자이너 패션 레이블 커머스",
+                        client: "MODE KOREA",
+                        role: "감도 높은 브랜드 이미지를 강조한 모던 이커머스 구축",
+                        desc: "상품의 가치를 높이는 고해상도 비주얼 중심의 레이아웃",
+                        content1: "브랜드 아이덴티티를 명확히 전달하는 감각적인 룩북 스타일의 UI로 쇼핑 몰입감을 높였습니다.",
+                        duration: "3개월",
+                        tags: ["b2c"],
+                        thumb: "images/thumb_fashion_ecommerce_laptop_1773543515074.png",
+                        visual: "images/fashion_split_view_1773586156047.png",
+                        img1: "images/fashion_long_landing_1773586174692.png",
+                        img2: "images/fashion_long_landing_1773586174692.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "미래형 디지털 자산 관리 핀테크 서비스",
+                        client: "V-BANK",
+                        role: "차세대 금융 자산 관리 대시보드 UI/UX 설계",
+                        desc: "안정성과 혁신성을 동시에 아우르는 핀테크 브랜드의 새로운 아이덴티티",
+                        content1: "금융 서비스 특유의 신뢰감 있는 디자인과 차세대 자산 관리 도구의 최첨단 이미지를 결합했습니다.",
+                        duration: "5개월",
+                        tags: ["b2b", "b2c"],
+                        thumb: "images/thumb_fintech_banking_laptop_1773543531530.png",
+                        visual: "images/landing_fintech_banking_1773543351287.png",
+                        img1: "images/landing_fintech_banking_1773543351287.png",
+                        img2: "",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "AI 급등주 자동 검색기 (AI Stock Finder)",
+                        client: "AI Stock Finder",
+                        role: "웹사이트 디자인 및 랜딩페이지 UI/UX 최적화",
+                        desc: "실시간 데이터를 활용한 금융 솔루션의 직관적 시각화 및 고전환 랜딩페이지 구축",
+                        content1: "복합적인 주식 데이터를 사용자 친화적인 대시보드 형태로 구성하여 투자 편의성을 극대화했습니다.",
+                        duration: "1개월",
+                        tags: ["b2c"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/aistockfinder_hero_1773627214260.png",
+                        visual: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/aistockfinder_details_1_1773627232956.png",
+                        img1: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/aistockfinder_details_2_1773627234507.png",
+                        img2: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/aistockfinder_details_3_1773627239809.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    },
+                    {
+                        title: "ONDO (온도하우스 - 아파트 인테리어 브랜드)",
+                        client: "ONDO (온도하우스)",
+                        role: "웹사이트 디자인 및 브랜딩 (인테리어 플랫폼 UI/UX)",
+                        desc: "아파트 인테리어 정찰제 쇼핑 플랫폼의 신뢰도 높은 인터페이스 및 브랜딩 구축",
+                        content1: "미니멀한 디자인과 정찰제 가격 정책을 부각한 명확한 UI를 통해 인테리어 시장의 새로운 경험을 설계했습니다.",
+                        duration: "2개월",
+                        tags: ["b2c", "renewal"],
+                        thumb: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/ondohaus_hero_thumbnail_1773630416620.png",
+                        visual: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/ondohaus_brand_story_1773637195956.png",
+                        img1: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/ondohaus_product_list_1773637209986.png",
+                        img2: "C:/Users/young/.gemini/antigravity/brain/af7c7cdb-19a5-4a9c-ba2b-4c344c5e35c3/ondohaus_hero_thumbnail_1773630416620.png",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }
+                ];
+
+                const seedBatch = db.batch();
+                approvedData.forEach(item => {
+                    const newDoc = db.collection("portfolios").doc();
+                    seedBatch.set(newDoc, item);
+                });
+                await seedBatch.commit();
+
+                alert("초기화 및 7개의 포트폴리오 데이터 업로드가 완료되었습니다!");
+                loadList();
+            } catch (error) {
+                console.error("Error during reset and seed: ", error);
+                alert("작업 중 오류가 발생했습니다: " + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "데이터 초기화 및 업로드 실행";
+            }
+        }
+    </script>
+</body>
+
+</html>
