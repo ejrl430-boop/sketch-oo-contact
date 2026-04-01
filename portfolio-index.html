@@ -878,6 +878,11 @@
                 </div>
             `;
 
+            // 🚀 브라우저 히스토리에 상태 추가 (뒤로가기 지원)
+            if (!window.history.state || window.history.state.page !== 'detail') {
+                history.pushState({ page: 'detail', id: id }, null, "");
+            }
+
             // Scroll to top quickly
             gsap.to(window, { scrollTo: 0, duration: 0.1 });
 
@@ -899,7 +904,15 @@
         }
 
         // Show List
-        function showList() {
+        function showList(isPopState = false) {
+            // 히스토리 관리 (뒤로가기 버튼이 아닐 때만 목록 상태로 변경)
+            if (!isPopState) {
+                if (window.history.state && window.history.state.page === 'detail') {
+                    history.back(); // 뒤로가기 실행 (popstate가 showList(true)를 호출하게 됨)
+                    return;
+                }
+            }
+
             gsap.to('#detail-view', {
                 opacity: 0,
                 y: 50,
@@ -913,6 +926,15 @@
                 }
             });
         }
+
+        // 🚀 뒤로가기 버튼 감지 로직 추가
+        window.onpopstate = function(event) {
+            if (event.state && event.state.page === 'detail') {
+                showDetail(event.state.id);
+            } else {
+                showList(true); // 실제 뒤로가기 발생 시 목록으로
+            }
+        };
 
         // Init
         window.addEventListener('DOMContentLoaded', () => {
