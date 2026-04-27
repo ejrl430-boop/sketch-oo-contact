@@ -121,6 +121,12 @@
                                         class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                                         placeholder="ex) 1~3개월">
                                 </div>
+                                <div>
+                                    <label class="block text-sm font-semibold mb-1">실제 사이트 링크 (Live Link)</label>
+                                    <input type="url" id="p_link"
+                                        class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        placeholder="https://...">
+                                </div>
                             </div>
 
                             <!-- Tags Checkbox -->
@@ -258,12 +264,16 @@
                             <input type="text" id="edit_duration" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold mb-1">카테고리 태그</label>
-                            <div class="flex gap-2 mt-1">
-                                <label class="inline-flex items-center text-xs"><input type="checkbox" value="b2b" class="edit-tag-check mr-1"> B2B</label>
-                                <label class="inline-flex items-center text-xs"><input type="checkbox" value="b2c" class="edit-tag-check mr-1"> B2C</label>
-                                <label class="inline-flex items-center text-xs"><input type="checkbox" value="renewal" class="edit-tag-check mr-1"> RENEWAL</label>
-                            </div>
+                            <label class="block text-sm font-semibold mb-1">실제 사이트 링크</label>
+                            <input type="url" id="edit_link" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="https://...">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">카테고리 태그</label>
+                        <div class="flex gap-2 mt-1">
+                            <label class="inline-flex items-center text-xs"><input type="checkbox" value="b2b" class="edit-tag-check mr-1"> B2B</label>
+                            <label class="inline-flex items-center text-xs"><input type="checkbox" value="b2c" class="edit-tag-check mr-1"> B2C</label>
+                            <label class="inline-flex items-center text-xs"><input type="checkbox" value="renewal" class="edit-tag-check mr-1"> RENEWAL</label>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
@@ -352,6 +362,7 @@
                 content1: document.getElementById('p_content1').value,
                 desc: document.getElementById('p_role').value, // desc = role 로 통일
                 duration: document.getElementById('p_duration').value,
+                link: document.getElementById('p_link').value,
                 thumb: document.getElementById('p_thumb').value,
                 visual: document.getElementById('p_visual').value,
                 img1: document.getElementById('p_img1').value,
@@ -450,6 +461,7 @@
                 document.getElementById('edit_role').value = data.role || '';
                 document.getElementById('edit_content1').value = data.content1 || '';
                 document.getElementById('edit_duration').value = data.duration || '';
+                document.getElementById('edit_link').value = data.link || '';
                 document.getElementById('edit_thumb').value = data.thumb || '';
                 document.getElementById('edit_visual').value = data.visual || '';
                 document.getElementById('edit_img1').value = data.img1 || '';
