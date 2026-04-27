@@ -711,6 +711,9 @@
             try {
                 const snapshot = await db.collection("portfolios").orderBy("createdAt", "desc").get();
                 projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+
+
                 renderList();
             } catch (error) {
                 console.error("Error fetching portfolios: ", error);
@@ -786,98 +789,116 @@
             const p = projects.find(x => x.id === id);
             const detailContainer = document.getElementById('detail-content');
 
+            // [DYNAMIC] 제공 서비스 태그 생성
+            const servicesHtml = (p.services || "").split(',').filter(s => s.trim() !== "").map(s => `
+                <span class="px-4 py-2 bg-[rgba(255,255,255,0.05)] text-gray-400 rounded-full text-xs font-bold border border-[rgba(255,255,255,0.1)] hover:text-neon hover:border-neon transition-all cursor-default">${s.trim()}</span>
+            `).join('');
+
+            // [DYNAMIC] 작업 리포트 상세 박스 생성
+            const reportItemsHtml = (p.report_items || []).map((item, idx) => {
+                return `
+                    <div class="bg-[rgba(255,255,255,0.02)] p-8 rounded-[16px] border border-[rgba(255,255,255,0.05)] border-l-[3px] border-l-[#ccff00] hover:bg-[rgba(255,255,255,0.04)] transition-all duration-300">
+                        <div class="mb-3">
+                            <h4 class="text-white font-bold text-[16px]">${item.title}</h4>
+                        </div>
+                        <p class="text-gray-400 text-[15px] font-light leading-[1.7]">${item.desc}</p>
+                    </div>
+                `;
+            }).join('');
+
             detailContainer.innerHTML = `
-                <!-- Section 0: Hero -->
+                <!-- [KEEP] Section 0: Original Dark Hero -->
                 <div class="detail-hero">
                     <img src="${p.visual}" class="detail-hero-img" alt="${p.title} Hero">
                     <div class="detail-hero-content">
-                        <p class="font-mont text-neon tracking-widest text-[13px] font-bold mb-6 uppercase">${p.client}</p>
-                        <h1 class="font-pretendard text-[clamp(32px,5vw,64px)] font-black leading-tight mb-6 max-w-[1200px] tracking-tight">${p.title}</h1>
-                        <p class="text-lg text-gray-200 font-light max-w-2xl">${p.desc || ''}</p>
+                        <p class="font-mont text-neon tracking-[4px] text-[12px] font-bold mb-6 uppercase">${p.client}</p>
+                        <h1 class="font-pretendard text-[clamp(28px,5vw,60px)] font-black leading-tight mb-6 max-w-[1200px] tracking-tight text-white">${p.title}</h1>
+                        <p class="text-lg text-gray-300 font-light max-w-2xl">${p.desc || ''}</p>
                     </div>
                 </div>
 
-                <!-- Section 1: Overview & Meta -->
-                <div class="w-full bg-black py-32">
-                    <div class="max-w-[1400px] mx-auto px-[5vw]">
-                        <div class="grid grid-cols-2 md:grid-cols-5 gap-12 border-t border-b border-[rgba(255,255,255,0.1)] py-12">
-                            <div>
-                                <p class="font-mont text-gray-500 text-[11px] font-black tracking-[3px] mb-3 uppercase">CLIENT</p>
-                                <p class="font-bold text-lg text-white">${p.client}</p>
+                <!-- Section 1: Info & Content -->
+                <div class="w-full bg-[#080808] py-24 pb-40">
+                    <div class="max-w-[1000px] mx-auto px-6">
+                        
+                        <!-- Info Table -->
+                        <div class="border-t border-[rgba(255,255,255,0.1)] mb-12">
+                            <div class="flex py-6 border-b border-[rgba(255,255,255,0.05)] items-center">
+                                <span class="w-32 md:w-48 text-gray-500 font-medium text-sm md:text-base">제작툴</span>
+                                <span class="font-bold text-white text-sm md:text-base">아임웹(Imweb)</span>
                             </div>
-                            <div>
-                                <p class="font-mont text-gray-500 text-[11px] font-black tracking-[3px] mb-3 uppercase">DURATION</p>
-                                <p class="font-bold text-lg text-white">${p.duration}</p>
+                            <div class="flex py-6 border-b border-[rgba(255,255,255,0.05)] items-center">
+                                <span class="w-32 md:w-48 text-gray-400 font-medium text-sm md:text-base">작업 기간</span>
+                                <span class="font-bold text-white text-sm md:text-base">${p.duration || '-'}</span>
                             </div>
-                            <div>
-                                <p class="font-mont text-gray-500 text-[11px] font-black tracking-[3px] mb-3 uppercase">ROLE</p>
-                                <p class="font-bold text-lg text-white">${p.role}</p>
+                            <div class="flex py-6 border-b border-[rgba(255,255,255,0.05)] items-center">
+                                <span class="w-32 md:w-48 text-gray-400 font-medium text-sm md:text-base">타입</span>
+                                <span class="font-bold text-neon text-sm md:text-base uppercase tracking-[2px]">${(p.tags || []).join(' / ')}</span>
                             </div>
-                            <div>
-                                <p class="font-mont text-gray-500 text-[11px] font-black tracking-[3px] mb-3 uppercase">CATEGORY</p>
-                                <p class="font-bold text-sm text-neon uppercase tracking-wider">${(p.tags || []).join(' / ')}</p>
-                            </div>
-                            <div>
-                                <p class="font-mont text-gray-500 text-[11px] font-black tracking-[3px] mb-3 uppercase">WEBSITE</p>
-                                ${p.link ? `
-                                <a href="${p.link}" target="_blank" class="inline-flex items-center gap-1 font-bold text-base text-white hover:text-neon transition-all group highlight-link">
-                                    홈페이지 보러가기
-                                    <svg class="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" transform="rotate(-45 12 12)"></path>
-                                    </svg>
-                                </a>` : '<p class="font-bold text-lg text-gray-600">N/A</p>'}
+                            <div class="flex py-6 border-b border-[rgba(255,255,255,0.05)] items-center">
+                                <span class="w-32 md:w-48 text-gray-400 font-medium text-sm md:text-base">클라이언트</span>
+                                <span class="font-bold text-white text-sm md:text-base">${p.client || '-'}</span>
                             </div>
                         </div>
-                        
-                        <div class="mt-24 max-w-4xl">
-                            <p class="font-mont text-neon tracking-[2px] text-[11px] font-bold mb-4 uppercase">PROJECT STORY</p>
-                            <h2 class="font-pretendard text-4xl lg:text-5xl font-black mb-10 leading-[1.3] tracking-tight">
-                                Strategic UX/UI Design<br><span class="text-neon">That Achieves Business Goals</span>
-                            </h2>
-                            <p class="text-gray-400 text-xl leading-[1.8] font-light">
-                                ${p.content1 || p.desc || ''}
+
+                        <!-- Big Link Button -->
+                        ${p.link ? `
+                        <div class="mb-24">
+                            <a href="${p.link}" target="_blank" class="block w-full bg-[#ccff00] text-black text-center py-7 rounded-2xl font-black text-lg md:text-xl hover:bg-white transition-all shadow-[0_10px_40px_rgba(204,255,0,0.2)] group">
+                                홈페이지 보러가기
+                                <span class="inline-block ml-1 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform">↗</span>
+                            </a>
+                            <p class="mt-6 text-[12px] text-gray-500 flex items-start gap-2 opacity-60">
+                                <span>⚠️</span>
+                                <span>클라이언트사에 의해 일부 디자인이 변경되었을 수 있습니다. 원본 디자인은 아래 이미지를 확인해주세요.</span>
                             </p>
                         </div>
-                    </div>
-                </div>
+                        ` : ''}
 
-                <!-- Section 2: Detail Page 1 -->
-                ${p.img1 ? `
-                <div class="py-16 bg-[rgba(255,255,255,0.02)]">
-                    <div class="max-w-[1280px] mx-auto px-[5vw]">
-                        <div class="rounded-[24px] overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.06)]">
-                            <img src="${p.img1}" class="w-full h-auto block" alt="${p.title} Detail 1" loading="lazy">
-                        </div>
-                    </div>
-                </div>` : ''}
-
-                <!-- Section 3: Detail Page 2 -->
-                ${p.img2 && p.img2 !== p.img1 ? `
-                <div class="py-16">
-                    <div class="max-w-[1280px] mx-auto px-[5vw]">
-                        <div class="rounded-[24px] overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.06)]">
-                            <img src="${p.img2}" class="w-full h-auto block" alt="${p.title} Detail 2" loading="lazy">
-                        </div>
-                    </div>
-                </div>` : ''}
-
-                <!-- Section 4: Mockup + Hero -->
-                <div class="py-16 bg-[rgba(255,255,255,0.02)]">
-                    <div class="max-w-[1280px] mx-auto px-[5vw]">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                            <div class="rounded-[20px] overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.06)]">
-                                <img src="${p.thumb}" class="w-full h-auto block" alt="${p.title} Mockup" loading="lazy">
-                            </div>
-                            <div class="rounded-[20px] overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.06)]">
-                                <img src="${p.visual}" class="w-full h-auto block" alt="${p.title} Hero" loading="lazy">
+                        <!-- [DYNAMIC] Work Report Section -->
+                        <div class="mb-32">
+                            <h2 class="text-3xl font-black mb-10 pb-4 inline-block text-white">작업 리포트</h2>
+                            <div class="text-gray-300 leading-[1.8] text-[16px] md:text-[17px] font-light whitespace-pre-wrap mb-14 break-keep">${(p.content1 || p.desc || '상세 작업 내용이 등록되지 않았습니다.').trim()}</div>
+                            
+                            <!-- Highlight Boxes (동적 생성) -->
+                            <div class="flex flex-col gap-4">
+                                ${reportItemsHtml}
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Footer -->
-                <div class="py-24 text-center border-t border-[rgba(255,255,255,0.05)]">
-                    <button class="font-mont text-neon text-sm font-bold tracking-[4px] hover:text-white transition-colors uppercase" onclick="showList()">← BACK TO LIST</button>
+                        <!-- [DYNAMIC] Provided Services Section -->
+                        ${servicesHtml ? `
+                        <div class="mb-32">
+                            <h2 class="text-2xl font-black mb-10 pb-4 border-b-2 border-neon inline-block text-white">제공 서비스</h2>
+                            <div class="flex flex-wrap gap-2">
+                                ${servicesHtml}
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Full-width Detail Images (Long Scroll) -->
+                        <div class="space-y-16">
+                            ${p.img1 ? `<img src="${p.img1}" class="w-full h-auto rounded-[32px] shadow-2xl border border-[rgba(255,255,255,0.05)]" alt="Img 1">` : ''}
+                            ${p.img2 && p.img2 !== p.img1 ? `<img src="${p.img2}" class="w-full h-auto rounded-[32px] shadow-2xl border border-[rgba(255,255,255,0.05)]" alt="Img 2">` : ''}
+                        </div>
+
+                        <!-- Bottom Grid -->
+                        <div class="mt-24 grid grid-cols-2 gap-6">
+                            <div class="rounded-3xl overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.05)]">
+                                <img src="${p.thumb}" class="w-full h-auto" alt="Thumb">
+                            </div>
+                            <div class="rounded-3xl overflow-hidden shadow-2xl border border-[rgba(255,255,255,0.05)]">
+                                <img src="${p.visual}" class="w-full h-auto" alt="Visual">
+                            </div>
+                        </div>
+
+                        <!-- Back Button -->
+                        <div class="mt-40 text-center">
+                            <button onclick="showList()" class="px-10 py-4 border border-[rgba(255,255,255,0.15)] rounded-full font-bold text-gray-400 hover:text-neon hover:border-neon transition-all uppercase text-[12px] tracking-[4px]">
+                                ← Back to Portfolio
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `;
 
